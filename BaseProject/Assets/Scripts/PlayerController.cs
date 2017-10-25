@@ -16,6 +16,7 @@ public class PlayerController : MonoBehaviour
 	public float resetJumpHeight = 1;
 	public Vector2 MinMaxZRot = new Vector2();
 
+    public bool enableWallJump = true;
     public bool enableDoubleJump = true;
     public bool wallHitJump = true;
 
@@ -52,7 +53,7 @@ public class PlayerController : MonoBehaviour
 		if (!keyPressDown)
 		{
 			keyPressDown = true;
-			if (isOnGround || (canDoubleJump && enableDoubleJump || wallHitJump))
+			if (isOnGround || (canDoubleJump && enableDoubleJump || wallHitJump && enableWallJump))
 			{
 				bool wallHit = false;
 				int wallHitDirection = 0;
@@ -62,12 +63,12 @@ public class PlayerController : MonoBehaviour
 
 				if (horizontal)
 				{
-					if (leftWallHit)
+					if (leftWallHit && enableWallJump)
 					{
 						wallHit = true;
 						wallHitDirection = 1;
 					}
-					else if (rightWallHit)
+					else if (rightWallHit && enableWallJump)
 					{
 						wallHit = true;
 						wallHitDirection = -1;
@@ -204,8 +205,8 @@ public class PlayerController : MonoBehaviour
     private bool onLeftWall()
     {
 
-        float checkLength = 0.5f;
-        float colliderThreshold = 0.01f;
+        float checkLength = 0.2f;
+        float colliderThreshold = 0.1f;
 
         Vector2 lineStart = new Vector2(this.transform.position.x - rend.bounds.extents.x - colliderThreshold, this.transform.position.y);
 
@@ -220,8 +221,8 @@ public class PlayerController : MonoBehaviour
     private bool onRightWall()
     {
        
-        float checkLength = 0.5f;
-        float colliderThreshold = 0.01f;
+        float checkLength = 0.2f;
+        float colliderThreshold = 0.1f;
 
         Vector2 lineStart = new Vector2(this.transform.position.x + rend.bounds.extents.x + colliderThreshold, this.transform.position.y);
        
