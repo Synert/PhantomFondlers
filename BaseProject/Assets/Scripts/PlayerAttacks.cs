@@ -18,9 +18,15 @@ public class PlayerAttacks : MonoBehaviour {
         inputs.x = -Input.GetAxis("AttackHorz" + playerNumber);
         inputs.y = -Input.GetAxis("AttackVert" + playerNumber);
 
-        if (inputs.sqrMagnitude > 1)
+        if (inputs.magnitude > 1.0f)
+        {
+            inputs.Normalize();
+        }
+
+        if (inputs.magnitude > 0.7f)
         {
             m_weapon.eulerAngles = new Vector3(m_weapon.eulerAngles.x, m_weapon.eulerAngles.y, Mathf.Atan2(inputs.x, inputs.y) * Mathf.Rad2Deg);
+            Debug.DrawLine(transform.position, inputs, Color.blue);
         }
 
         //m_weapon.LookAt(m_weapon.position + inputs);

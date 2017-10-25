@@ -13,44 +13,59 @@ public class MultiInput : MonoBehaviour {
 
     // Update is called once per frame
     void Update()
-	{
-		//loop through keys and test input
-		if (Input.anyKey) {
-			foreach (keyInfo info in keys) {
-				int accepted = 0;
-				for (int a = 0; a < info.key.Count; a++) {//foreach (KeyCode key in info.key) {
-					KeyCode key = info.key[a];
-					//check if inputs check is less than max
-					if (accepted < info.keyInputsAccepted) {
-						if ((Input.GetKey (key) && info.keyType[a] == keyInputType.getKey) ||
-							(Input.GetKeyDown (key) && info.keyType[a] == keyInputType.getKeyDown) ||
-							(Input.GetKeyUp (key) && info.keyType[a] == keyInputType.getKeyUp)) {
-							if (info.keyEvent.GetPersistentEventCount () > 0) {
-								for (int b = 0; b < info.keyEvent.GetPersistentEventCount (); b++) {
-									activate (info, info.keyEvent.GetPersistentTarget (b), info.keyEvent.GetPersistentMethodName (b), a);
-								}
-							} else {
-								activate (info, null, null, a);
-							}
-							accepted++;
-						}
-					}
-				}
-				//check if axis has been used
-				if (info.axisInput) {
-					if (Input.GetAxis (info.axis) != 0) {
+    {
+        foreach (keyInfo info in keys)
+        {
 
-						//set variable to axis value
-						info.variable = Input.GetAxis (info.axis);
-						activate (info, null, null, -1);
+            //check if axis has been used
+            if (info.axisInput)
+            {
+                if (Input.GetAxis(info.axis) != 0)
+                {
 
-					}
-				}
-			}
-		}
-	}
+                    //set variable to axis value
+                    Debug.Log(info.axis);
+                    info.variable = Input.GetAxis(info.axis);
+                    activate(info, null, null, -1);
 
-	void activate(keyInfo info, Object temp, string name, int index) {
+                }
+            }
+
+            //loop through keys and test input
+            if (Input.anyKey)
+            {
+
+                int accepted = 0;
+                for (int a = 0; a < info.key.Count; a++)
+                {//foreach (KeyCode key in info.key) {
+                    KeyCode key = info.key[a];
+                    //check if inputs check is less than max
+                    if (accepted < info.keyInputsAccepted)
+                    {
+                        if ((Input.GetKey(key) && info.keyType[a] == keyInputType.getKey) ||
+                            (Input.GetKeyDown(key) && info.keyType[a] == keyInputType.getKeyDown) ||
+                            (Input.GetKeyUp(key) && info.keyType[a] == keyInputType.getKeyUp))
+                        {
+                            if (info.keyEvent.GetPersistentEventCount() > 0)
+                            {
+                                for (int b = 0; b < info.keyEvent.GetPersistentEventCount(); b++)
+                                {
+                                    activate(info, info.keyEvent.GetPersistentTarget(b), info.keyEvent.GetPersistentMethodName(b), a);
+                                }
+                            }
+                            else
+                            {
+                                activate(info, null, null, a);
+                            }
+                            accepted++;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    void activate(keyInfo info, Object temp, string name, int index) {
 			
 		//check if variable input or private function
 		if (info.variableInput || info.privateFunction) {
