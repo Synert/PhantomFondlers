@@ -45,7 +45,6 @@ public class Player : MonoBehaviour
                 
             }
         }
-
         
         if (Input.GetButtonDown("Fire2"))
         {
