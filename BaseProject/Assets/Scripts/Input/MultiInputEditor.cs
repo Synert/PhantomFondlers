@@ -29,6 +29,15 @@ public class MultiInputEditor : Editor {
         //display count of key data
 		EditorGUILayout.IntField("Buttons", keys.arraySize);
 
+
+		//GUILayout.BeginHorizontal();
+
+		//EditorGUILayout.LabelField ("Debug Key Test", GUILayout.Width(95));
+		//serializedObject.FindProperty ("debugKeyPress").boolValue =
+		//	EditorGUILayout.Toggle (serializedObject.FindProperty ("debugKeyPress").boolValue);
+
+		//GUILayout.EndHorizontal ();
+
         //display add/remove buttons for key data
 		GUILayout.BeginHorizontal(EditorStyles.helpBox);
 

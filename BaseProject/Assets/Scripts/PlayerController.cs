@@ -10,6 +10,7 @@ public class PlayerController : MonoBehaviour
     public float jumpSpeed = 5;
     public float jumpDuration;
 	public bool isOnGround = false;
+	public float slowDownSpeed;
 
 	public bool rotateAroundObject = true;
 	public float rotationSpeed = 1;
@@ -20,6 +21,16 @@ public class PlayerController : MonoBehaviour
     public bool enableDoubleJump = true;
     public bool wallHitJump = true;
 
+	//===== Data for buttonMashing ====//
+	public float arbitaryHealth = 0;
+	public PlayerController ontopOf;
+	public float increaseCount = 0;
+	public float increaseWhenOntopCount = 0;
+	public float currentCount = 0;
+	public float respawnCount = 100;
+	public float respawnHealth = 10;
+	//=================================
+
     bool canDoubleJump = true;
     float jmpDuration;
 
@@ -27,6 +38,7 @@ public class PlayerController : MonoBehaviour
     bool canJumpVariable = false; 
 
 	bool horizontal = false;
+	public bool movementPause = false;
 
     void Start()
     {
@@ -36,75 +48,138 @@ public class PlayerController : MonoBehaviour
 
     }
 
-	void inputs(float variable) {
-		if (variable < 0) {
-			if (GetComponent<Rigidbody2D> ().velocity.x > -this.MaxSpeed) {
-				GetComponent<Rigidbody2D> ().AddForce (new Vector2 (-this.Acceleration, 0.0f));
-			}
-		} else {
-			if (GetComponent<Rigidbody2D> ().velocity.x < this.MaxSpeed) {
-				GetComponent<Rigidbody2D> ().AddForce (new Vector2 (this.Acceleration, 0.0f));
+	//==============================================
+	//Deal with buttonMashing to revive/tickle to death
+	//needs to be polished but fundementals are done
+	void takeDamage() {
+		if (!movementPause) {
+			arbitaryHealth -= 1;
+			if (arbitaryHealth <= 0) {
+				movementPause = true;
 			}
 		}
-		horizontal = true;
+	}
+
+	void buttonMash () {
+		if (arbitaryHealth <= 0) {
+			if (!movementPause) {
+				movementPause = true;//debug
+			}
+			GetComponent<Rigidbody2D> ().velocity = Vector2.zero;
+			if (ontopOf) {
+				currentCount += increaseWhenOntopCount;
+			} else {
+				currentCount += increaseCount;
+			}
+			testHealth ();
+		} else {
+			if (ontopOf) {
+				if (ontopOf.arbitaryHealth <= 0) {
+					GetComponent<Rigidbody2D> ().velocity = Vector2.zero;
+					movementPause = true;
+					ontopOf.currentCount -= increaseCount;
+					ontopOf.testHealth ();
+				}
+			}
+		}
+	}
+
+	public void testHealth() {
+		if (currentCount <= -1) {
+			ontopOf.movementPause = false;
+			ontopOf.ontopOf = null;
+			Destroy (this.gameObject);
+		} else if (currentCount >= respawnCount) {
+			movementPause = false;
+			arbitaryHealth = respawnHealth;
+			currentCount = 0;
+		}
+	}
+
+	void OnTriggerEnter2D (Collider2D other) {
+		if (other.GetComponent<PlayerController> ()) {
+			if (other.GetComponent<PlayerController> ().arbitaryHealth <= 0) {
+				if (!movementPause) {
+					if (!other.GetComponent<PlayerController> ().ontopOf) {
+						ontopOf = other.GetComponent<PlayerController> ();
+						other.GetComponent<PlayerController> ().ontopOf = this;
+					}
+				}
+			}
+		}
+	}
+
+	void OnTriggerExit2D (Collider2D other) {
+		if (other.GetComponent<PlayerController> ()) {
+			if (ontopOf) {
+				if (other.GetComponent<PlayerController> ().ontopOf) {
+					ontopOf = null;
+					other.GetComponent<PlayerController> ().ontopOf = null;
+				}
+			}
+		}
+	}
+	//====================================================
+
+	void inputs(float variable) {
+		if (!movementPause) {
+			if (variable < 0) {
+				if (GetComponent<Rigidbody2D> ().velocity.x > -this.MaxSpeed) {
+					GetComponent<Rigidbody2D> ().AddForce (new Vector2 (-this.Acceleration, 0.0f));
+				}
+			} else {
+				if (GetComponent<Rigidbody2D> ().velocity.x < this.MaxSpeed) {
+					GetComponent<Rigidbody2D> ().AddForce (new Vector2 (this.Acceleration, 0.0f));
+				}
+			}
+			horizontal = true;
+		}
 	}
 
 	void jump() {
-		if (!keyPressDown)
-		{
-			keyPressDown = true;
-			if (isOnGround || (canDoubleJump && enableDoubleJump || wallHitJump && enableWallJump))
-			{
-				bool wallHit = false;
-				int wallHitDirection = 0;
+		if (!movementPause) {
+			if (!keyPressDown) {
+				keyPressDown = true;
+				if (isOnGround || (canDoubleJump && enableDoubleJump || wallHitJump && enableWallJump)) {
+					bool wallHit = false;
+					int wallHitDirection = 0;
 
-				bool leftWallHit = onLeftWall();
-				bool rightWallHit = onRightWall();
+					bool leftWallHit = onLeftWall ();
+					bool rightWallHit = onRightWall ();
 
-				if (horizontal)
-				{
-					if (leftWallHit && enableWallJump)
-					{
-						wallHit = true;
-						wallHitDirection = 1;
+					if (horizontal) {
+						if (leftWallHit && enableWallJump) {
+							wallHit = true;
+							wallHitDirection = 1;
+						} else if (rightWallHit && enableWallJump) {
+							wallHit = true;
+							wallHitDirection = -1;
+						}
 					}
-					else if (rightWallHit && enableWallJump)
-					{
-						wallHit = true;
-						wallHitDirection = -1;
+
+					if (!wallHit) {
+						if (isOnGround || (canDoubleJump && enableDoubleJump)) {
+							GetComponent<Rigidbody2D> ().velocity = new Vector2 (GetComponent<Rigidbody2D> ().velocity.x, this.jumpSpeed);
+							jumpDuration = 0.0f;
+							canDoubleJump = true;
+						}
+					} else {
+						GetComponent<Rigidbody2D> ().velocity = new Vector2 (this.jumpSpeed * wallHitDirection, this.jumpSpeed);
+
+						jmpDuration = 0.0f;
+						canJumpVariable = true;
+					}
+
+					if (!isOnGround && !wallHit) {
+						canDoubleJump = false;
 					}
 				}
+			} else if (canJumpVariable) {
+				jmpDuration += Time.deltaTime;
 
-				if (!wallHit)
-				{
-					if (isOnGround || (canDoubleJump && enableDoubleJump))
-					{
-						GetComponent<Rigidbody2D>().velocity = new Vector2(GetComponent<Rigidbody2D>().velocity.x, this.jumpSpeed);
-						jumpDuration = 0.0f;
-						canDoubleJump = true;
-					}
+				if (jmpDuration < this.jumpDuration / 1000) {
+					GetComponent<Rigidbody2D> ().velocity = new Vector2 (GetComponent<Rigidbody2D> ().velocity.x, this.jumpSpeed);
 				}
-				else
-				{
-					GetComponent<Rigidbody2D>().velocity = new Vector2(this.jumpSpeed * wallHitDirection, this.jumpSpeed);
-
-					jmpDuration = 0.0f;
-					canJumpVariable = true;
-				}
-
-				if (!isOnGround && !wallHit)
-				{
-					canDoubleJump = false;
-				}
-			}
-		}
-		else if (canJumpVariable)
-		{
-			jmpDuration += Time.deltaTime;
-
-			if (jmpDuration < this.jumpDuration / 1000)
-			{
-				GetComponent<Rigidbody2D>().velocity = new Vector2(GetComponent<Rigidbody2D>().velocity.x, this.jumpSpeed);
 			}
 		}
 	}
@@ -118,6 +193,11 @@ public class PlayerController : MonoBehaviour
         if (isOnGround)
         {
             canDoubleJump = true;
+			if (GetComponent<Rigidbody2D> ().velocity != Vector2.zero) {
+				if (!horizontal) {
+					GetComponent<Rigidbody2D> ().velocity = Vector3.Lerp (GetComponent<Rigidbody2D> ().velocity, Vector2.zero, Time.deltaTime * slowDownSpeed);
+				}
+			}
         }
 
         if (Input.GetKeyDown("space"))
