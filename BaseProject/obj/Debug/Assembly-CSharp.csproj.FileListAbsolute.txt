@@ -59,3 +59,4 @@ D:\Desktop\Git\PhantomFondlers\BaseProject\Temp\bin\Debug\UnityEngine.VR.xml
 D:\Desktop\Git\PhantomFondlers\BaseProject\obj\Debug\Assembly-CSharp.dll
 D:\Desktop\Git\PhantomFondlers\BaseProject\obj\Debug\Assembly-CSharp.pdb
 D:\Desktop\Git\PhantomFondlers\BaseProject\obj\Debug\Assembly-CSharp.csprojResolveAssemblyReference.cache
+D:\Desktop\Git\PhantomFondlers\BaseProject\Temp\bin\Debug\XInputDotNetPure.dll

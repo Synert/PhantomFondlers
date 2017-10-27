@@ -29,7 +29,10 @@ public class PlayerController : MonoBehaviour
 	public float currentCount = 0;
 	public float respawnCount = 100;
 	public float respawnHealth = 10;
-	//=================================
+    //=================================
+    //====== Data for sprinting ======//
+    public float sprintSpeedModifier;
+    //=================================
 
     bool canDoubleJump = true;
     float jmpDuration;
@@ -128,24 +131,52 @@ public class PlayerController : MonoBehaviour
 			}
 		}
 	}
-	//====================================================
+    //====================================================
 
-	void inputs(variableData variable) {
-		if (!movementPause) {
-			if (variable.axisValue < 0) {
-				if (GetComponent<Rigidbody2D> ().velocity.x > -this.MaxSpeed) {
-					GetComponent<Rigidbody2D> ().AddForce (new Vector2 (-this.Acceleration, 0.0f));
-				}
-			} else {
-				if (GetComponent<Rigidbody2D> ().velocity.x < this.MaxSpeed) {
-					GetComponent<Rigidbody2D> ().AddForce (new Vector2 (this.Acceleration, 0.0f));
-				}
-			}
-			horizontal = true;
-		}
-	}
+    void inputs(variableData variable)
+    {
+		float tempAxis = variable.state.ThumbStickLeft.inputs.x;
+        if (!movementPause)
+        {
+            if (Mathf.Abs(tempAxis) < 0.9f)
+            {
+                if (tempAxis < 0)
+                {
+                    if (GetComponent<Rigidbody2D>().velocity.x > -this.MaxSpeed)
+                    {
+                        GetComponent<Rigidbody2D>().AddForce(new Vector2(-this.Acceleration, 0.0f));
+                    }
+                }
+                else
+                {
+                    if (GetComponent<Rigidbody2D>().velocity.x < this.MaxSpeed)
+                    {
+                        GetComponent<Rigidbody2D>().AddForce(new Vector2(this.Acceleration, 0.0f));
+                    }
+                }
+            }
+            else
+            {
+                if (tempAxis < 0)
+                {
+                    if (GetComponent<Rigidbody2D>().velocity.x > -this.MaxSpeed * sprintSpeedModifier)
+                    {
+                        GetComponent<Rigidbody2D>().AddForce(new Vector2(-this.Acceleration * sprintSpeedModifier, 0.0f));
+                    }
+                }
+                else
+                {
+                    if (GetComponent<Rigidbody2D>().velocity.x < this.MaxSpeed * sprintSpeedModifier)
+                    {
+                        GetComponent<Rigidbody2D>().AddForce(new Vector2(this.Acceleration * sprintSpeedModifier, 0.0f));
+                    }
+                }
+            }
+            horizontal = true;
+        }
+    }
 
-	void jump() {
+    void jump() {
 		if (!movementPause) {
 			if (!keyPressDown) {
 				keyPressDown = true;

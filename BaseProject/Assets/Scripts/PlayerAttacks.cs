@@ -23,7 +23,7 @@ public class PlayerAttacks : MonoBehaviour {
 	}
 
 	void grabInputs (variableData _var) {
-		inputs = _var.multiAxisValue;
+		inputs = _var.state.ThumbStickRight.inputs;
 		inputs.y = -inputs.y;
 	}
 	

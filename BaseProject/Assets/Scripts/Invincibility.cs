@@ -49,7 +49,7 @@ public class Invincibility : MonoBehaviour
     
     }
 
-    void dogde()
+    void dodge()
     {
         if (GetComponent<Rigidbody2D>().velocity != Vector2.zero)
         {

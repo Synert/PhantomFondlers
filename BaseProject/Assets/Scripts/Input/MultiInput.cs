@@ -13,51 +13,15 @@ public class MultiInput : MonoBehaviour {
 	[SerializeField]
 	public List<bool> visible = new List<bool>();
 
-	void test(GamePadState temp) {
-		// = GamePad.GetState (PlayerIndex.One);
-		if (temp.IsConnected) {
-			Debug.Log (temp.Buttons.A);
-			Debug.Log (temp.Buttons.B);
-			Debug.Log (temp.Buttons.X);
-			Debug.Log (temp.Buttons.Y);
-
-			Debug.Log (temp.Buttons.Guide);
-			Debug.Log (temp.Buttons.Start);
-			Debug.Log (temp.Buttons.RightStick);
-			Debug.Log (temp.Buttons.RightShoulder);
-			Debug.Log (temp.Buttons.LeftStick);
-			Debug.Log (temp.Buttons.LeftShoulder);
-
-			Debug.Log (temp.DPad.Down);
-			Debug.Log (temp.DPad.Up);
-			Debug.Log (temp.DPad.Left);
-			Debug.Log (temp.DPad.Right);
-
-			Debug.Log (temp.ThumbSticks.Left.X);
-			Debug.Log (temp.ThumbSticks.Left.Y);
-			Debug.Log (temp.ThumbSticks.Right.X);
-			Debug.Log (temp.ThumbSticks.Right.Y);
-
-			Debug.Log (temp.Triggers.Left);
-			Debug.Log (temp.Triggers.Right);
-		}
-	}
-
 	void Update() {
-		//testControllerInputs ();
-		//test();
 		foreach (keyInfo key in keys) {
 			for (int a = 0; a < key.keypad.Count; a++) {
 				//GamePadState temp = GamePad.GetState (key.keypad [a].controller);
 				GamePadState temp = key.keypad[a].keyData.data.state.UpdateKeys(key.keypad[a].controller);
 				if (temp.IsConnected) {
 					//do controller stuff
-					for (int b = 0; b < 14; b++) {
-						if (key.keypad [a].keyData.data.state.controllerVariables [b] != button.none) {
-							if (key.keypad [a].keyData.data.state.controllerVariables [b] == key.keypad [a].keyData.data.state.selectedVariables [b]) {
-								activate (key, 2, a);
-							}
-						}
+					if (key.keypad [a].keyData.data.state.pollKeys ()) {
+						activate (key, 2, a);
 					}
 				}
 			}
@@ -145,11 +109,15 @@ public class MultiInput : MonoBehaviour {
 	}
 
 	void customInvoke(GameObject info, string name) {
-		info.SendMessage (name);
+		if (name != "") {
+			info.SendMessage (name);
+		}
 	}
 
 	void customVariableInvoke(GameObject info, string name, variableData variable) {
-		info.SendMessage (name, variable);
+		if (name != "") {
+			info.SendMessage (name, variable);
+		}
 	}
 
 	void testKeyboardInputs() {
@@ -217,7 +185,6 @@ public class buttonInfo {
 [System.Serializable]
 public class controllerInfo {
 	public PlayerIndex controller;
-	public bool variablePossible;
 	public basicKeyInfo keyData;
 }
 
@@ -226,6 +193,7 @@ public class basicKeyInfo {
 	//basic data
 	public bool variableInput;
 	public bool expandInput;
+	public bool viewable;
 	public variableData data;
 
 	//deal with private functions
@@ -271,24 +239,27 @@ public class controllerButtonData {
 	//default data
 	public button[] controllerVariables;
 	public button[] selectedVariables;
+	public bool displayMainButtons;
 	public bool a;
 	public bool x;
 	public bool b;
 	public bool y;
 
+	public bool displayMiscButtons;
 	public bool g;
 	public bool s;
-
 	public bool rs;
 	public bool rsh;
 	public bool ls;
 	public bool lsh;
 
+	public bool displayDpadButtons;
 	public bool dpu;
 	public bool dpd;
 	public bool dpl;
 	public bool dpr;
 
+	public bool displayVariable;
 	public inputsData ThumbStickLeft;
 	public bool tsl;
 	public inputsData ThumbStickRight;
@@ -303,6 +274,28 @@ public class controllerButtonData {
 	public GamePadState state;
 
 	//functions
+	public bool pollKeys () {
+		for (int a = 0; a < controllerVariables.Length; a++) {
+			if (controllerVariables [a] != button.none) {
+				if (controllerVariables [a] == selectedVariables [a]) {
+					return true;
+				}
+			}
+		}
+		if (ThumbStickLeft.inputs != Vector2.zero && tsl) {
+			return true;
+		}
+		if (ThumbStickRight.inputs != Vector2.zero && tsr) {
+			return true;
+		}
+		if (TriggerLeft.input != 0 && tl) {
+			return true;
+		}
+		if (TriggerRight.input != 0 && tr) {
+			return true;
+		}
+		return false;
+	}
 	public GamePadState UpdateKeys(PlayerIndex _index) {
 		state = GamePad.GetState (_index);
 		if (state.IsConnected) {
