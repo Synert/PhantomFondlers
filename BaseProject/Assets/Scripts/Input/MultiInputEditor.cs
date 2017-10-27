@@ -2,6 +2,7 @@
 using UnityEngine.Events;
 using UnityEditor;
 using System.Collections.Generic;
+using XInputDotNetPure;
 
 //create custom editor for multi-input
 [CustomEditor(typeof(MultiInput))]
@@ -17,7 +18,6 @@ public class MultiInputEditor : Editor {
 	}
 
 	public override void OnInspectorGUI() {
-
 		serializedObject.Update ();
 
 		//begin whole button gui
@@ -66,6 +66,7 @@ public class MultiInputEditor : Editor {
 				//grab the current keysets
 				SerializedProperty currentKeyButtonList = currentKeySet.FindPropertyRelative ("buttons");
 				SerializedProperty currentKeyAxisList = currentKeySet.FindPropertyRelative ("axis");
+				SerializedProperty currentKeyGamepadList = currentKeySet.FindPropertyRelative ("keypad");
 
 				//allow closing of element data
 				GUI.backgroundColor = new Color (1, 1, 1, 1);
@@ -142,9 +143,28 @@ public class MultiInputEditor : Editor {
 
 					//setup multi/single axis support
 					EditorGUILayout.PropertyField (currentKeyAxisList.GetArrayElementAtIndex (b).FindPropertyRelative ("multiAxis"));
+					EditorGUILayout.PropertyField (currentKeyAxisList.GetArrayElementAtIndex (b).FindPropertyRelative ("advancedDeadZone"));
 					EditorGUILayout.PropertyField (currentKeyAxisList.GetArrayElementAtIndex (b).FindPropertyRelative ("axis"));
+					if (currentKeyAxisList.GetArrayElementAtIndex (b).FindPropertyRelative ("advancedDeadZone").boolValue) {
+						EditorGUILayout.PropertyField (currentKeyAxisList.GetArrayElementAtIndex (b).FindPropertyRelative ("axisDeadZone"));
+					} else {
+						GUILayout.BeginHorizontal ();
+						EditorGUILayout.LabelField ("Axis 1 Dead Zone", GUILayout.Width (110));
+						float tempDeadZone = EditorGUILayout.FloatField (currentKeyAxisList.GetArrayElementAtIndex (b).FindPropertyRelative ("axisDeadZone").vector2Value.y);
+						currentKeyAxisList.GetArrayElementAtIndex (b).FindPropertyRelative ("axisDeadZone").vector2Value = new Vector2(-tempDeadZone, tempDeadZone);
+						GUILayout.EndHorizontal ();
+					}
 					if (currentKeyAxisList.GetArrayElementAtIndex (b).FindPropertyRelative ("multiAxis").boolValue) {
 						EditorGUILayout.PropertyField (currentKeyAxisList.GetArrayElementAtIndex (b).FindPropertyRelative ("axis2"));
+						if (currentKeyAxisList.GetArrayElementAtIndex (b).FindPropertyRelative ("advancedDeadZone").boolValue) {
+							EditorGUILayout.PropertyField (currentKeyAxisList.GetArrayElementAtIndex (b).FindPropertyRelative ("axis2DeadZone"));
+						} else {
+							GUILayout.BeginHorizontal ();
+							EditorGUILayout.LabelField ("Axis 2 Dead Zone", GUILayout.Width (110));
+							float tempDeadZone = EditorGUILayout.FloatField (currentKeyAxisList.GetArrayElementAtIndex (b).FindPropertyRelative ("axis2DeadZone").vector2Value.y);
+							currentKeyAxisList.GetArrayElementAtIndex (b).FindPropertyRelative ("axis2DeadZone").vector2Value = new Vector2(-tempDeadZone, tempDeadZone);
+							GUILayout.EndHorizontal ();
+						}
 					}
 
 					//check if global vars
@@ -290,6 +310,76 @@ public class MultiInputEditor : Editor {
 				GUILayout.EndVertical ();
 				GUILayout.EndVertical ();
 
+				GUILayout.BeginHorizontal ();
+				GUILayout.FlexibleSpace ();
+
+				serializedObject.Update ();
+				//display adding for multiple axxis
+				if (GUILayout.Button ("Add GamePad", GUILayout.Width (150))) {
+					//add new blank key data
+					currentKeyGamepadList.InsertArrayElementAtIndex (currentKeyGamepadList.arraySize);
+				}
+				if (GUILayout.Button ("Remove GamePad", GUILayout.Width (150))) {
+					//check if key data has data
+					if (currentKeyGamepadList.arraySize > 0) {
+						//remove last key data
+						currentKeyGamepadList.DeleteArrayElementAtIndex (currentKeyGamepadList.arraySize - 1);
+					}
+				}
+				serializedObject.ApplyModifiedProperties ();
+
+				GUILayout.FlexibleSpace ();
+				GUILayout.EndHorizontal ();
+
+				for (int b = 0; b < currentKeyGamepadList.arraySize; b++) {
+					serializedObject.Update ();
+					EditorGUILayout.PropertyField(currentKeyGamepadList.GetArrayElementAtIndex (b).FindPropertyRelative ("variablePossible"));
+					EditorGUILayout.PropertyField(currentKeyGamepadList.GetArrayElementAtIndex (b).FindPropertyRelative ("controller"));
+					SerializedProperty state = currentKeyGamepadList.GetArrayElementAtIndex (b).FindPropertyRelative ("keyData").FindPropertyRelative("data").FindPropertyRelative("state");
+					SerializedProperty currentKey = currentKeyGamepadList.GetArrayElementAtIndex (b).FindPropertyRelative ("keyData");
+
+					while (state.FindPropertyRelative ("controllerVariables").arraySize != 14) {
+						if (state.FindPropertyRelative ("controllerVariables").arraySize < 14) {
+							state.FindPropertyRelative ("controllerVariables").InsertArrayElementAtIndex (state.FindPropertyRelative ("controllerVariables").arraySize);
+						} else if (state.FindPropertyRelative ("controllerVariables").arraySize > 14) {
+							state.FindPropertyRelative ("controllerVariables").DeleteArrayElementAtIndex (state.FindPropertyRelative ("controllerVariables").arraySize);
+						}
+					}
+
+					while (state.FindPropertyRelative ("selectedVariables").arraySize != 14) {
+						if (state.FindPropertyRelative ("selectedVariables").arraySize < 14) {
+							state.FindPropertyRelative ("selectedVariables").InsertArrayElementAtIndex (state.FindPropertyRelative ("selectedVariables").arraySize);
+						} else if (state.FindPropertyRelative ("selectedVariables").arraySize > 14) {
+							state.FindPropertyRelative ("selectedVariables").DeleteArrayElementAtIndex (state.FindPropertyRelative ("selectedVariables").arraySize);
+						}
+					}
+
+					displayControllerInput (state);
+
+					//display options for changing variable
+					EditorGUILayout.PropertyField (currentKey.FindPropertyRelative ("variableInput"));
+					if (currentKey.FindPropertyRelative ("expandInput").boolValue) {
+						//allow hiding of data block
+						if (GUILayout.Button ("Hide Variables")) {
+							currentKey.FindPropertyRelative ("expandInput").boolValue = false;
+						}
+						//display data block
+						if (currentKey.FindPropertyRelative ("variableInput").boolValue) {
+							displayKeyData (currentKey);
+						} else {
+							currentKey.FindPropertyRelative ("expandInput").boolValue = false;
+						}
+					} else {
+						//allow showing of data block
+						if (GUILayout.Button ("Display Variables")) {
+							currentKey.FindPropertyRelative ("expandInput").boolValue = true;
+						}
+					}
+
+					serializedObject.ApplyModifiedProperties ();
+				}
+
+
 			} else {
 				
 				//allow opening of element
@@ -310,109 +400,182 @@ public class MultiInputEditor : Editor {
 		serializedObject.ApplyModifiedProperties ();
 	}
 
+	void displayControllerInput(SerializedProperty state) {
+		SerializedProperty selectedVars = state.FindPropertyRelative ("selectedVariables");
+
+		//split up the data
+		GUILayout.Space (2);
+		GUILayout.BeginHorizontal ();
+		EditorGUILayout.LabelField ("Xbox A", GUILayout.Width(140));
+		EditorGUILayout.PropertyField(state.FindPropertyRelative ("a"), GUIContent.none);
+		EditorGUILayout.PropertyField(selectedVars.GetArrayElementAtIndex(0), GUIContent.none);
+		GUILayout.EndHorizontal ();
+
+		//split up the data
+		GUILayout.Space (2);
+		GUILayout.BeginHorizontal ();
+		EditorGUILayout.LabelField ("Xbox X", GUILayout.Width(140));
+		EditorGUILayout.PropertyField(state.FindPropertyRelative ("x"), GUIContent.none);
+		EditorGUILayout.PropertyField(selectedVars.GetArrayElementAtIndex(1), GUIContent.none);
+		GUILayout.EndHorizontal ();
+
+		//split up the data
+		GUILayout.Space (2);
+		GUILayout.BeginHorizontal ();
+		EditorGUILayout.LabelField ("Xbox B", GUILayout.Width(140));
+		EditorGUILayout.PropertyField(state.FindPropertyRelative ("b"), GUIContent.none);
+		EditorGUILayout.PropertyField(selectedVars.GetArrayElementAtIndex(2), GUIContent.none);
+		GUILayout.EndHorizontal ();
+
+		//split up the data
+		GUILayout.Space (2);
+		GUILayout.BeginHorizontal ();
+		EditorGUILayout.LabelField ("Xbox Y", GUILayout.Width(140));
+		EditorGUILayout.PropertyField(state.FindPropertyRelative ("y"), GUIContent.none);
+		EditorGUILayout.PropertyField(selectedVars.GetArrayElementAtIndex(3), GUIContent.none);
+		GUILayout.EndHorizontal ();
+
+		//split up the data
+		GUILayout.Space (2);
+		GUILayout.BeginHorizontal ();
+		EditorGUILayout.LabelField ("Xbox Guide", GUILayout.Width(140));
+		EditorGUILayout.PropertyField(state.FindPropertyRelative ("g"), GUIContent.none);
+		EditorGUILayout.PropertyField(selectedVars.GetArrayElementAtIndex(4), GUIContent.none);
+		GUILayout.EndHorizontal ();
+
+		//split up the data
+		GUILayout.Space (2);
+		GUILayout.BeginHorizontal ();
+		EditorGUILayout.LabelField ("Xbox Start", GUILayout.Width(140));
+		EditorGUILayout.PropertyField(state.FindPropertyRelative ("s"), GUIContent.none);
+		EditorGUILayout.PropertyField(selectedVars.GetArrayElementAtIndex(5), GUIContent.none);
+		GUILayout.EndHorizontal ();
+
+		//split up the data
+		GUILayout.Space (2);
+		GUILayout.BeginHorizontal ();
+		EditorGUILayout.LabelField ("Xbox Right Stick", GUILayout.Width(140));
+		EditorGUILayout.PropertyField(state.FindPropertyRelative ("rs"), GUIContent.none);
+		EditorGUILayout.PropertyField(selectedVars.GetArrayElementAtIndex(6), GUIContent.none);
+		GUILayout.EndHorizontal ();
+
+		//split up the data
+		GUILayout.Space (2);
+		GUILayout.BeginHorizontal ();
+		EditorGUILayout.LabelField ("Xbox Right Shoulder", GUILayout.Width(140));
+		EditorGUILayout.PropertyField(state.FindPropertyRelative ("rsh"), GUIContent.none);
+		EditorGUILayout.PropertyField(selectedVars.GetArrayElementAtIndex(7), GUIContent.none);
+		GUILayout.EndHorizontal ();
+
+		//split up the data
+		GUILayout.Space (2);
+		GUILayout.BeginHorizontal ();
+		EditorGUILayout.LabelField ("Xbox Left Stick", GUILayout.Width(140));
+		EditorGUILayout.PropertyField(state.FindPropertyRelative ("ls"), GUIContent.none);
+		EditorGUILayout.PropertyField(selectedVars.GetArrayElementAtIndex(8), GUIContent.none);
+		GUILayout.EndHorizontal ();
+
+		//split up the data
+		GUILayout.Space (2);
+		GUILayout.BeginHorizontal ();
+		EditorGUILayout.LabelField ("Xbox Left Shoulder", GUILayout.Width(140));
+		EditorGUILayout.PropertyField(state.FindPropertyRelative ("lsh"), GUIContent.none);
+		EditorGUILayout.PropertyField(selectedVars.GetArrayElementAtIndex(9), GUIContent.none);
+		GUILayout.EndHorizontal ();
+
+		//split up the data
+		GUILayout.Space (2);
+		GUILayout.BeginHorizontal ();
+		EditorGUILayout.LabelField ("Xbox Dpad Up", GUILayout.Width(140));
+		EditorGUILayout.PropertyField(state.FindPropertyRelative ("dpu"), GUIContent.none);
+		EditorGUILayout.PropertyField(selectedVars.GetArrayElementAtIndex(10), GUIContent.none);
+		GUILayout.EndHorizontal ();
+
+		//split up the data
+		GUILayout.Space (2);
+		GUILayout.BeginHorizontal ();
+		EditorGUILayout.LabelField ("Xbox Dpad Down", GUILayout.Width(140));
+		EditorGUILayout.PropertyField(state.FindPropertyRelative ("dpd"), GUIContent.none);
+		EditorGUILayout.PropertyField(selectedVars.GetArrayElementAtIndex(11), GUIContent.none);
+		GUILayout.EndHorizontal ();
+
+		//split up the data
+		GUILayout.Space (2);
+		GUILayout.BeginHorizontal ();
+		EditorGUILayout.LabelField ("Xbox Dpad Left", GUILayout.Width(140));
+		EditorGUILayout.PropertyField(state.FindPropertyRelative ("dpl"), GUIContent.none);
+		EditorGUILayout.PropertyField(selectedVars.GetArrayElementAtIndex(12), GUIContent.none);
+		GUILayout.EndHorizontal ();
+
+		//split up the data
+		GUILayout.Space (2);
+		GUILayout.BeginHorizontal ();
+		EditorGUILayout.LabelField ("Xbox Dpad Right", GUILayout.Width(140));
+		EditorGUILayout.PropertyField(state.FindPropertyRelative ("dpr"), GUIContent.none);
+		EditorGUILayout.PropertyField(selectedVars.GetArrayElementAtIndex(13), GUIContent.none);
+		GUILayout.EndHorizontal ();
+
+		//split up the data
+		GUILayout.Space (2);
+		GUILayout.BeginHorizontal ();
+		EditorGUILayout.LabelField ("Xbox Left Stick Axis", GUILayout.Width(140));
+		EditorGUILayout.PropertyField(state.FindPropertyRelative ("tsl"), GUIContent.none);
+		GUILayout.EndHorizontal ();
+
+		//split up the data
+		GUILayout.Space (2);
+		GUILayout.BeginHorizontal ();
+		EditorGUILayout.LabelField ("Xbox Right Stick Axis", GUILayout.Width(140));
+		EditorGUILayout.PropertyField(state.FindPropertyRelative ("tsr"), GUIContent.none);
+		GUILayout.EndHorizontal ();
+
+		//split up the data
+		GUILayout.Space (2);
+		GUILayout.BeginHorizontal ();
+		EditorGUILayout.LabelField ("Xbox Trigger Left", GUILayout.Width(140));
+		EditorGUILayout.PropertyField(state.FindPropertyRelative ("tl"), GUIContent.none);
+		GUILayout.EndHorizontal ();
+
+		//split up the data
+		GUILayout.Space (2);
+		GUILayout.BeginHorizontal ();
+		EditorGUILayout.LabelField ("Xbox Trigger Right", GUILayout.Width(140));
+		EditorGUILayout.PropertyField(state.FindPropertyRelative ("tr"), GUIContent.none);
+		GUILayout.EndHorizontal ();
+	}
+
 	void displayKeyData(SerializedProperty currentKey) {
 		//display variable data block
 		SerializedProperty data = currentKey.FindPropertyRelative ("data");
 		EditorGUILayout.BeginVertical (EditorStyles.helpBox);
 
-		//split up the data
-		GUILayout.Space (2);
-		GUILayout.BeginHorizontal ();
-		EditorGUILayout.LabelField ("Axis Value", GUILayout.Width(80));
-		EditorGUILayout.FloatField (data.FindPropertyRelative ("axisValue").floatValue);
-		GUILayout.EndHorizontal ();
+		labelWithProperty ("Axis Value", 80, data.FindPropertyRelative ("axisValue"), true, true, 2);
 
-		//split up the data
-		GUILayout.Space (2);
-		GUILayout.BeginHorizontal ();
-		EditorGUILayout.LabelField ("Multi Axis Value", GUILayout.Width(100));
-		EditorGUILayout.Vector2Field ("", data.FindPropertyRelative ("multiAxisValue").vector2Value);
-		GUILayout.EndHorizontal ();
+		labelWithProperty ("Multi Axis Value", 100, data.FindPropertyRelative ("multiAxisValue"), true, true, 2);
 
-		//split up the data
-		GUILayout.Space (2);
-		GUILayout.BeginHorizontal ();
-		EditorGUILayout.LabelField ("Bool", GUILayout.Width(40));
-		EditorGUILayout.PropertyField(data.FindPropertyRelative("b"), GUIContent.none);
-		GUILayout.EndHorizontal ();
+		labelWithProperty ("Bool", 40, data.FindPropertyRelative ("b"), true, true, 2);
 
-		//split up the data
-		GUILayout.Space (2);
-		GUILayout.BeginHorizontal ();
-		EditorGUILayout.LabelField ("Byte", GUILayout.Width(40));
-		EditorGUILayout.PropertyField(data.FindPropertyRelative("by"), GUIContent.none);
-		GUILayout.EndHorizontal ();
+		labelWithProperty ("Byte", 40, data.FindPropertyRelative ("by"), true, true, 2);
 
-		//split up the data
-		GUILayout.Space (2);
-		GUILayout.BeginHorizontal ();
-		EditorGUILayout.LabelField ("Char", GUILayout.Width(40));
-		EditorGUILayout.PropertyField(data.FindPropertyRelative("c"), GUIContent.none);
-		GUILayout.EndHorizontal ();
+		labelWithProperty ("Char", 40, data.FindPropertyRelative ("c"), true, true, 2);
 
-		//split up the data
-		GUILayout.Space (2);
-		GUILayout.BeginHorizontal ();
-		EditorGUILayout.LabelField ("Float", GUILayout.Width(40));
-		EditorGUILayout.PropertyField(data.FindPropertyRelative("f"), GUIContent.none);
-		GUILayout.EndHorizontal ();
+		labelWithProperty ("Float", 40, data.FindPropertyRelative ("f"), true, true, 2);
 
-		//split up the data
-		GUILayout.Space (2);
-		GUILayout.BeginHorizontal ();
-		EditorGUILayout.LabelField ("Int", GUILayout.Width(40));
-		EditorGUILayout.PropertyField(data.FindPropertyRelative("i"), GUIContent.none);
-		GUILayout.EndHorizontal ();
+		labelWithProperty ("Int", 30, data.FindPropertyRelative ("i"), true, true, 2);
 
-		//split up the data
-		GUILayout.Space (2);
-		GUILayout.BeginHorizontal ();
-		EditorGUILayout.LabelField ("GameObject", GUILayout.Width(80));
-		EditorGUILayout.PropertyField(data.FindPropertyRelative("obj"), GUIContent.none);
-		GUILayout.EndHorizontal ();
+		labelWithProperty ("GameObject", 80, data.FindPropertyRelative ("obj"), true, true, 2);
 
-		//split up the data
-		GUILayout.Space (2);
-		GUILayout.BeginHorizontal ();
-		EditorGUILayout.LabelField ("MonoBehaviour", GUILayout.Width(100));
-		EditorGUILayout.ObjectField(data.FindPropertyRelative("sc"), GUIContent.none);
-		GUILayout.EndHorizontal ();
+		labelWithProperty ("MonoBehaviour", 80, data.FindPropertyRelative ("sc"), true, true, 2);
 
-		//split up the data
-		GUILayout.Space (2);
-		GUILayout.BeginHorizontal ();
-		EditorGUILayout.LabelField ("String", GUILayout.Width(80));
-		EditorGUILayout.PropertyField(data.FindPropertyRelative("s"), GUIContent.none);
-		GUILayout.EndHorizontal ();
+		labelWithProperty ("String", 80, data.FindPropertyRelative ("s"), true, true, 2);
 
+		labelWithProperty ("Transform", 80, data.FindPropertyRelative ("t"), true, true, 2);
 
-		//split up the data
-		GUILayout.Space (2);
-		GUILayout.BeginHorizontal ();
-		EditorGUILayout.LabelField ("Transform", GUILayout.Width(80));
-		EditorGUILayout.PropertyField(data.FindPropertyRelative("t"), GUIContent.none);
-		GUILayout.EndHorizontal ();
+		labelWithProperty ("Unity Event", 80, data.FindPropertyRelative ("u"), true, true, 2);
 
-		//split up the data
-		GUILayout.Space (2);
-		GUILayout.BeginHorizontal ();
-		EditorGUILayout.LabelField ("Unity Event", GUILayout.Width(80));
-		EditorGUILayout.PropertyField(data.FindPropertyRelative("u"), GUIContent.none);
-		GUILayout.EndHorizontal ();
+		labelWithProperty ("Vector2", 80, data.FindPropertyRelative ("v2"), true, true, 2);
 
-		//split up the data
-		GUILayout.Space (2);
-		GUILayout.BeginHorizontal ();
-		EditorGUILayout.LabelField ("Vector2", GUILayout.Width(80));
-		EditorGUILayout.PropertyField(data.FindPropertyRelative("v2"), GUIContent.none);
-		GUILayout.EndHorizontal ();
-
-		//split up the data
-		GUILayout.Space (2);
-		GUILayout.BeginHorizontal ();
-		EditorGUILayout.LabelField ("Vector3", GUILayout.Width(80));
-		EditorGUILayout.PropertyField(data.FindPropertyRelative("v3"), GUIContent.none);
-		GUILayout.EndHorizontal ();
+		labelWithProperty ("Vector3", 80, data.FindPropertyRelative ("v3"), true, true, 2);
 
 		//split up the data
 		GUILayout.Space (2);
@@ -422,6 +585,20 @@ public class MultiInputEditor : Editor {
 		GUILayout.EndHorizontal ();
 
 		EditorGUILayout.EndVertical();
+	}
+
+	void labelWithProperty(string label, int width, SerializedProperty output, bool space = false, bool horizontal = false, int spaceSize = 0) {
+		if (horizontal) {
+			GUILayout.BeginHorizontal ();
+		}
+		if (space) {
+			GUILayout.Space (spaceSize);
+		}
+		EditorGUILayout.LabelField (label, GUILayout.Width(width));
+		EditorGUILayout.PropertyField(output, GUIContent.none);
+		if (horizontal) {
+			GUILayout.EndHorizontal ();
+		}
 	}
 
 }
