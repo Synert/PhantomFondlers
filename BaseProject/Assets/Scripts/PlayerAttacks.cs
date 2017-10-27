@@ -48,12 +48,12 @@ public class PlayerAttacks : MonoBehaviour {
 
         float angle = Mathf.Atan2(inputs.x, inputs.y) * Mathf.Rad2Deg;
 
-        if(inputs.magnitude < 0.5f)
+        if(inputs.magnitude <= 0.75f)
         {
             resetAttack = true;
         }
 
-        if (inputs.magnitude > 0.5f && cooldown <= 0.0f && m_weapon != null && resetAttack)
+        if (inputs.magnitude > 0.75f && cooldown <= 0.0f && m_weapon != null && resetAttack)
         {
             if (!attacking)
             {
@@ -72,13 +72,13 @@ public class PlayerAttacks : MonoBehaviour {
             }
             if (!m_weapon.GetComponentInChildren<WeaponPickup>().GetAngleLock())
             {
-                m_weapon.eulerAngles = new Vector3(m_weapon.eulerAngles.x, m_weapon.eulerAngles.y, -angle);
-                m_weapon.GetComponentInChildren<WeaponPickup>().ChargeAngle(-angle, power);
+                //m_weapon.eulerAngles = new Vector3(m_weapon.eulerAngles.x, m_weapon.eulerAngles.y, -angle);
+                m_weapon.GetComponentInChildren<WeaponPickup>().ChargeAngle(90.0f - angle, power);
             }
             else
             {
                 float newAngle = quad * size;
-                m_weapon.eulerAngles = new Vector3(m_weapon.eulerAngles.x, m_weapon.eulerAngles.y, newAngle - 90.0f);
+                //m_weapon.eulerAngles = new Vector3(m_weapon.eulerAngles.x, m_weapon.eulerAngles.y, newAngle - 90.0f);
                 m_weapon.GetComponentInChildren<WeaponPickup>().ChargeDirection(quad, power);
             }
             //Debug.DrawLine(transform.position, inputs, Color.blue);
@@ -95,13 +95,13 @@ public class PlayerAttacks : MonoBehaviour {
             float newAngle = quad * size;
             if(!m_weapon.GetComponentInChildren<WeaponPickup>().GetAngleLock())
             {
-                m_weapon.eulerAngles = new Vector3(m_weapon.eulerAngles.x, m_weapon.eulerAngles.y, -angle);
-                m_weapon.GetComponentInChildren<WeaponPickup>().AttackAngle(angle, power);
+                //m_weapon.eulerAngles = new Vector3(m_weapon.eulerAngles.x, m_weapon.eulerAngles.y, -angle);
+                m_weapon.GetComponentInChildren<WeaponPickup>().AttackAngle(90.0f - angle, power);
                 Debug.DrawLine(prevPos, transform.position + Quaternion.AngleAxis(90.0f - angle, Vector3.forward) * transform.right * 2.0f, Color.yellow, 1.0f);
             }
             else
             {
-                m_weapon.eulerAngles = new Vector3(m_weapon.eulerAngles.x, m_weapon.eulerAngles.y, newAngle - 90.0f);
+                //m_weapon.eulerAngles = new Vector3(m_weapon.eulerAngles.x, m_weapon.eulerAngles.y, newAngle - 90.0f);
                 
                 m_weapon.GetComponentInChildren<WeaponPickup>().AttackDirection(quad, power);
                 Debug.DrawLine(prevPos, transform.position + Quaternion.AngleAxis(newAngle, Vector3.forward) * transform.right * 2.0f, Color.yellow, 1.0f);

@@ -6,6 +6,7 @@ public class ExampleSword : WeaponPickup {
 
     public override void AttackDirection(int quad, float power)
     {
+        Debug.Log("Attack power " + power);
         switch (GetDirection(quad))
         {
             case DIRECTION.UP:
@@ -37,7 +38,7 @@ public class ExampleSword : WeaponPickup {
 
     public override void AttackAngle(float angle, float power)
     {
-
+        Debug.DrawLine(transform.position, transform.position + Quaternion.AngleAxis(angle, Vector3.forward) * transform.right * 2.0f, Color.yellow, 1.0f);
     }
 
     public override void ChargeDirection(int quad, float power)
@@ -73,7 +74,7 @@ public class ExampleSword : WeaponPickup {
 
     public override void ChargeAngle(float angle, float power)
     {
-
+        Debug.DrawLine(transform.position, transform.position + Quaternion.AngleAxis(angle, Vector3.forward) * transform.right * 2.0f, Color.yellow, 1.0f);
     }
 
 }
