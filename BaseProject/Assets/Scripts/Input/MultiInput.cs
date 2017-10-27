@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEditor;
 
 public class MultiInput : MonoBehaviour {
 
@@ -11,115 +12,78 @@ public class MultiInput : MonoBehaviour {
 	[SerializeField]
 	public List<bool> visible = new List<bool>();
 
-    // Update is called once per frame
-    void Update()
-	{
-		foreach (keyInfo info in keys) {
-
-			//check if axis has been used
-			if (info.axisInput) {
-				if (Input.GetAxis (info.axis) != 0) {
-
-					//set variable to axis value
-					Debug.Log (info.axis);
-					info.variable = Input.GetAxis (info.axis);
-					activate (info, null, null, -1);
-
+	void Update() {
+		foreach (keyInfo key in keys) {
+			for (int a = 0; a < key.axis.Count; a++) {
+				//do axis stuff here
+				if (!key.axis [a].multiAxis) {
+					key.axis [a].keyData.data.axisValue = Input.GetAxis (key.axis [a].axis);
+					if (key.axis [a].keyData.data.axisValue != 0) {
+						activate (key, true, a);
+					}
+				} else {
+					key.axis [a].keyData.data.multiAxisValue.x = Input.GetAxis (key.axis [a].axis);
+					key.axis [a].keyData.data.multiAxisValue.y = Input.GetAxis (key.axis [a].axis2);
+					if (key.axis [a].keyData.data.multiAxisValue != Vector2.zero) {
+						activate (key, true, a);
+					}
 				}
 			}
-
-			//loop through keys and test input
-			if (Input.anyKey) {
-
-				int accepted = 0;
-				for (int a = 0; a < info.key.Count; a++) {//foreach (KeyCode key in info.key) {
-					KeyCode key = info.key [a];
-					//check if inputs check is less than max
-					if (accepted < info.keyInputsAccepted) {
-						if ((Input.GetKey (key) && info.keyType [a] == keyInputType.getKey) ||
-						     (Input.GetKeyDown (key) && info.keyType [a] == keyInputType.getKeyDown) ||
-						     (Input.GetKeyUp (key) && info.keyType [a] == keyInputType.getKeyUp)) {
-							if (info.keyEvent.GetPersistentEventCount () > 0) {
-								for (int b = 0; b < info.keyEvent.GetPersistentEventCount (); b++) {
-									activate (info, info.keyEvent.GetPersistentTarget (b), info.keyEvent.GetPersistentMethodName (b), a);
-								}
-							} else {
-								activate (info, null, null, a);
-							}
-							accepted++;
-						}
-					}
+			for (int a = 0; a < key.buttons.Count; a++) {
+				//do button stuff here
+				if ((Input.GetKey (key.buttons[a].button) && key.buttons[a].keyType == keyInputType.getKey) ||
+					(Input.GetKeyDown (key.buttons[a].button) && key.buttons[a].keyType == keyInputType.getKeyDown) ||
+					(Input.GetKeyUp (key.buttons[a].button) && key.buttons[a].keyType == keyInputType.getKeyUp)) {
+					activate(key, false, a);
 				}
 			}
 		}
 	}
-		
-    void activate(keyInfo info, Object temp, string name, int index) {
-			
-		//check if variable input or private function
-		if (info.variableInput || info.privateFunction) {
 
-			//check if function object exists
-			if (info.functionObject) {
+	void activate(keyInfo _key, bool type, int index) {
+		//deal with 1st layer pass on key
+		basicKeyInfo key = new basicKeyInfo();
+		if (type) {
+			key = _key.axis [index].keyData;
+		} else {
+			key = _key.buttons [index].keyData;
+		}
 
-				//check if variable input or not
-				if (info.variableInput) {
-					//invoke method based on function object
-					if (index == -1) {
-						customObjectVariableInvoke (info, info.variable);
-					} else {
-						customObjectVariableInvoke (info, info.variable + info.offset[index]);
-					}
+		//check if key has a set function
+		if (key.function) {
+			//check if the key has an object
+			if (key.functionObject) {
+				//check if the key has variable input
+				if (key.variableInput) {
+					//carry our custom function
+					customVariableInvoke (key.functionObject, key.functionName, key.data);
 				} else {
-					//invoke method based on function object
-					customObjectInvoke (info);
+					//carry our custom function
+					customInvoke (key.functionObject, key.functionName);
 				}
-			} else if (!info.functionObject) {
-
-				//check if variable input or not
-				if (info.variableInput) {
-					//invoke method based on event systems
-					if (index == -1) {
-						customVariableInvoke (temp, name, info.variable);
-					} else {
-						customVariableInvoke (temp, name, info.variable + info.offset [index]);
-					}
-				} else {
-					//invoke method based on event systems
-					customInvoke (temp, name);
-				}
+			} else {
+				Debug.Log ("You need to add an object to activate this key: " + key.functionName);
 			}
 		} else {
-			//if basic invoke, invoke event
-			info.keyEvent.Invoke ();
+			//check if key has public fuction
+			if (key.publicFunction != null) {
+				//invoke unity event
+				key.publicFunction.Invoke ();
+			} else {
+				Debug.Log ("You need to add an event to activate this key: " + gameObject.name);
+			}
 		}
 	}
 
-	void debug() {
-		transform.Translate (Vector3.up);
+	void customInvoke(GameObject info, string name) {
+		info.SendMessage (name);
 	}
 
-	void debug1(float output) {
-		transform.Translate (Vector3.up * output);
+	void customVariableInvoke(GameObject info, string name, variableData variable) {
+		info.SendMessage (name, variable);
 	}
 
-	void customInvoke(object info, string name) {
-		((MonoBehaviour)info).SendMessage (name);
-	}
-
-	void customVariableInvoke(object info, string name, float variable) {
-		((MonoBehaviour)info).SendMessage (name, variable);
-	}
-
-	void customObjectInvoke(keyInfo info) {
-		info.functionObject.SendMessage (info.privateFunctionName);
-	}
-
-	void customObjectVariableInvoke(keyInfo info, float variable) {
-		info.functionObject.SendMessage (info.privateFunctionName, variable);
-	}
 }
-
 
 //default class for key input data
 [System.Serializable]
@@ -127,17 +91,66 @@ public class keyInfo
 {
 	//basic variables for input names should explain it
 	public int keyInputsAccepted;
-	public bool axisInput;
+	public bool globalFunction;
+	public bool globalFunctionObj;
+	public GameObject globalFunctionObject;
+	public string globalFunctionName;
+	public List<axisInfo> axis;
+	public List<buttonInfo> buttons;
+
+}
+
+[System.Serializable]
+public class axisInfo {
 	public string axis;
-    public List<KeyCode> key;
-	public List<int> offset;
-	public List<keyInputType> keyType;
-	public UnityEvent keyEvent;
-	public GameObject functionObject;
-	public string privateFunctionName;
-	public bool privateFunction;
+	public string axis2;
+	public bool multiAxis;
+	public basicKeyInfo keyData;
+}
+
+[System.Serializable]
+public class buttonInfo {
+	public KeyCode button;
+	public basicKeyInfo keyData;
+	public keyInputType keyType;
+}
+
+[System.Serializable]
+public class basicKeyInfo {
+	//basic data
 	public bool variableInput;
-	public float variable;
+	public bool expandInput;
+	public variableData data;
+
+	//deal with private functions
+	public bool function;
+	public string functionName;
+	public GameObject functionObject;
+
+	//deal with public functions
+	public UnityEvent publicFunction;
+}
+
+[System.Serializable]
+public class variableData {
+	//axis data
+	public float axisValue;
+	public Vector2 multiAxisValue;
+
+	//all data types needed
+	public bool b;
+	public byte by;
+	public char c;
+	public float f;
+	public int i;
+	public GameObject obj;
+	public MonoBehaviour sc;
+	public string s;
+	public Transform t;
+	public UnityEvent u;
+	public Vector2 v2;
+	public Vector3 v3;
+	public Vector4 v4;
 }
 
 public enum keyInputType {

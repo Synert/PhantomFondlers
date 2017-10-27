@@ -60,6 +60,10 @@ public class PlayerController : MonoBehaviour
 		}
 	}
 
+	//if health below 0 count up
+	//if person currently ontop count up slower
+	//if health above 0 and above another
+	//if other health below 0 count down other
 	void buttonMash () {
 		if (arbitaryHealth <= 0) {
 			if (!movementPause) {
@@ -84,6 +88,9 @@ public class PlayerController : MonoBehaviour
 		}
 	}
 
+	//check if arbitary health is 
+	//below 0 or if currenCount is
+	//above respawn and take actions
 	public void testHealth() {
 		if (currentCount <= -1) {
 			ontopOf.movementPause = false;
@@ -96,6 +103,7 @@ public class PlayerController : MonoBehaviour
 		}
 	}
 
+	//if other has no ontop set ontop of other and self to required
 	void OnTriggerEnter2D (Collider2D other) {
 		if (other.GetComponent<PlayerController> ()) {
 			if (other.GetComponent<PlayerController> ().arbitaryHealth <= 0) {
@@ -109,9 +117,10 @@ public class PlayerController : MonoBehaviour
 		}
 	}
 
+	//if other has ontop set ontop of other and self to required
 	void OnTriggerExit2D (Collider2D other) {
 		if (other.GetComponent<PlayerController> ()) {
-			if (ontopOf) {
+			if (ontopOf == this) {
 				if (other.GetComponent<PlayerController> ().ontopOf) {
 					ontopOf = null;
 					other.GetComponent<PlayerController> ().ontopOf = null;
@@ -121,9 +130,9 @@ public class PlayerController : MonoBehaviour
 	}
 	//====================================================
 
-	void inputs(float variable) {
+	void inputs(variableData variable) {
 		if (!movementPause) {
-			if (variable < 0) {
+			if (variable.axisValue < 0) {
 				if (GetComponent<Rigidbody2D> ().velocity.x > -this.MaxSpeed) {
 					GetComponent<Rigidbody2D> ().AddForce (new Vector2 (-this.Acceleration, 0.0f));
 				}

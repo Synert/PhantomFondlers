@@ -15,17 +15,23 @@ public class PlayerAttacks : MonoBehaviour {
     int lastQuad = -1;
     float size = 30.0f;
     int quadLimit = 5;
+	Vector2 inputs;
 
     // Use this for initialization
     void Start () {
         posList = new List<Vector2>();
 	}
+
+	void grabInputs (variableData _var) {
+		inputs = _var.multiAxisValue;
+		inputs.y = -inputs.y;
+	}
 	
 	// Update is called once per frame
 	void Update () {
-        Vector2 inputs;
-        inputs.x = Input.GetAxis("AttackHorz" + playerNumber);
-        inputs.y = -Input.GetAxis("AttackVert" + playerNumber);
+        //Vector2 inputs;
+        //inputs.x = Input.GetAxis("AttackHorz" + playerNumber);
+        //inputs.y = -Input.GetAxis("AttackVert" + playerNumber);
 
         if (inputs.magnitude > 1.0f)
         {

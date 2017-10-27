@@ -29,15 +29,6 @@ public class MultiInputEditor : Editor {
         //display count of key data
 		EditorGUILayout.IntField("Buttons", keys.arraySize);
 
-
-		//GUILayout.BeginHorizontal();
-
-		//EditorGUILayout.LabelField ("Debug Key Test", GUILayout.Width(95));
-		//serializedObject.FindProperty ("debugKeyPress").boolValue =
-		//	EditorGUILayout.Toggle (serializedObject.FindProperty ("debugKeyPress").boolValue);
-
-		//GUILayout.EndHorizontal ();
-
         //display add/remove buttons for key data
 		GUILayout.BeginHorizontal(EditorStyles.helpBox);
 
@@ -67,45 +58,64 @@ public class MultiInputEditor : Editor {
 
         //loop through each key data and display change options
 		for (int a = 0; a < keys.arraySize; a++) {
+			//check if current key is visible
 			if (visible.GetArrayElementAtIndex (a).boolValue) {
-				SerializedProperty currentKey = keys.GetArrayElementAtIndex (a);
-				SerializedProperty currentKeyList = currentKey.FindPropertyRelative ("key");
-				SerializedProperty axisInput = keys.GetArrayElementAtIndex (a).FindPropertyRelative ("axisInput");
-				SerializedProperty privateFunction = keys.GetArrayElementAtIndex (a).FindPropertyRelative ("privateFunction");
-				SerializedProperty offset = keys.GetArrayElementAtIndex (a).FindPropertyRelative ("offset");
-				SerializedProperty keyType = keys.GetArrayElementAtIndex (a).FindPropertyRelative ("keyType");
+				//grab current keyInfo
+				SerializedProperty currentKeySet = keys.GetArrayElementAtIndex (a);
+
+				//grab the current keysets
+				SerializedProperty currentKeyButtonList = currentKeySet.FindPropertyRelative ("buttons");
+				SerializedProperty currentKeyAxisList = currentKeySet.FindPropertyRelative ("axis");
 
 				//allow closing of element data
 				GUI.backgroundColor = new Color (1, 1, 1, 1);
 				GUILayout.BeginHorizontal (EditorStyles.helpBox);
 				GUILayout.FlexibleSpace ();
+				serializedObject.Update ();
 				if (GUILayout.Button ("Close Element " + a.ToString (), GUILayout.Width (300))) {
 					visible.GetArrayElementAtIndex (a).boolValue = false;
 				}
+				serializedObject.ApplyModifiedProperties ();
 				GUILayout.FlexibleSpace ();
 				GUI.backgroundColor = new Color (0.9f, 0.9f, 0.9f, 0.5f);
 				GUILayout.EndHorizontal ();
 
 				//start data section
 				GUILayout.BeginVertical (EditorStyles.helpBox);
+				serializedObject.Update ();
 
+				//grab current global options
+				SerializedProperty globalFunction = currentKeySet.FindPropertyRelative ("globalFunction");
+				SerializedProperty globalFunctionObj = currentKeySet.FindPropertyRelative ("globalFunctionObj");
+				SerializedProperty globalFunctionObject = currentKeySet.FindPropertyRelative ("globalFunctionObject");
+				SerializedProperty globalFunctionName = currentKeySet.FindPropertyRelative ("globalFunctionName");
+
+				GUILayout.BeginHorizontal ();
+				EditorGUILayout.PropertyField (globalFunction);
+				EditorGUILayout.PropertyField (globalFunctionObj);
+				GUILayout.EndHorizontal ();
+
+				if (globalFunction.boolValue) {
+					EditorGUILayout.PropertyField (globalFunctionName);
+				}
+				if (globalFunctionObj.boolValue) {
+					EditorGUILayout.PropertyField (globalFunctionObject);
+				}
+					
+				GUILayout.BeginVertical (EditorStyles.helpBox);
 				GUILayout.BeginHorizontal (EditorStyles.helpBox);
 
 				GUILayout.FlexibleSpace ();
-				//display adding for multiple keys
-				if (GUILayout.Button ("Add Key", GUILayout.Width (150))) {
+				//display adding for multiple axxis
+				if (GUILayout.Button ("Add Axis", GUILayout.Width (150))) {
 					//add new blank key data
-					currentKeyList.InsertArrayElementAtIndex (currentKeyList.arraySize);
-					offset.InsertArrayElementAtIndex (offset.arraySize);
-					keyType.InsertArrayElementAtIndex (keyType.arraySize);
+					currentKeyAxisList.InsertArrayElementAtIndex (currentKeyAxisList.arraySize);
 				}
-				if (GUILayout.Button ("Remove Key", GUILayout.Width (150))) {
+				if (GUILayout.Button ("Remove Axis", GUILayout.Width (150))) {
 					//check if key data has data
-					if (currentKeyList.arraySize > 0) {
+					if (currentKeyAxisList.arraySize > 0) {
 						//remove last key data
-						currentKeyList.DeleteArrayElementAtIndex (currentKeyList.arraySize - 1);
-						offset.DeleteArrayElementAtIndex (offset.arraySize - 1);
-						keyType.DeleteArrayElementAtIndex (keyType.arraySize - 1);
+						currentKeyAxisList.DeleteArrayElementAtIndex (currentKeyAxisList.arraySize - 1);
 					}
 				}
 				GUILayout.FlexibleSpace ();
@@ -114,114 +124,183 @@ public class MultiInputEditor : Editor {
 				GUILayout.EndHorizontal ();
 				GUILayout.Space (2);
 
-				GUILayout.BeginHorizontal ();
-
-				//display bool for variable input
-				EditorGUILayout.LabelField ("Variable Input", GUILayout.Width (100));
-				keys.GetArrayElementAtIndex (a).FindPropertyRelative ("variableInput").boolValue
-					= EditorGUILayout.Toggle (keys.GetArrayElementAtIndex (a).FindPropertyRelative
-												("variableInput").boolValue, GUILayout.Width (20));
-				
-				//split up the options
-				GUILayout.EndHorizontal ();
-				GUILayout.Space (2);
-				GUILayout.BeginHorizontal ();
-
-				//display boo for private function
-				EditorGUILayout.LabelField ("Private Function", GUILayout.Width (100));
-				privateFunction.boolValue = EditorGUILayout.Toggle (privateFunction.boolValue, GUILayout.Width (20));
-
-				if (privateFunction.boolValue) {
-					EditorGUILayout.PropertyField (keys.GetArrayElementAtIndex (a).FindPropertyRelative ("privateFunctionName"), GUIContent.none, GUILayout.Width (190));
-
-					//split up the options
-					GUILayout.EndHorizontal ();
-					GUILayout.Space (2);
-					GUILayout.BeginHorizontal ();
-
-					EditorGUILayout.LabelField ("GameObject", GUILayout.Width (125));
-					EditorGUILayout.ObjectField (keys.GetArrayElementAtIndex (a).FindPropertyRelative ("functionObject"), GUIContent.none, GUILayout.Width (190));
-				}
-
-				//split up the options
-				GUILayout.EndHorizontal ();
-				GUILayout.Space (2);
-				GUILayout.BeginHorizontal ();
-
-				//display bool for axis input
-				EditorGUILayout.LabelField ("Axis Input", GUILayout.Width (100));
-				axisInput.boolValue = EditorGUILayout.Toggle (axisInput.boolValue, GUILayout.Width (20));
-
-				if (axisInput.boolValue) {
-					EditorGUILayout.PropertyField (keys.GetArrayElementAtIndex (a).FindPropertyRelative ("axis"), GUIContent.none, GUILayout.Width (190));
-					keys.GetArrayElementAtIndex (a).FindPropertyRelative ("variableInput").boolValue = true;
-					privateFunction.boolValue = true;
-				}
-
-
-				//split up the options
-				GUILayout.EndHorizontal ();
-				GUILayout.Space (2);
-
-				GUILayout.BeginHorizontal ();
-
-				//display int field for max accepted keys per update
-				EditorGUILayout.LabelField ("Max Inputs Per Update", GUILayout.Width (135));
-				keys.GetArrayElementAtIndex (a).FindPropertyRelative ("keyInputsAccepted").intValue = 
-					EditorGUILayout.IntField (keys.GetArrayElementAtIndex (a).FindPropertyRelative ("keyInputsAccepted").intValue, GUILayout.Width (180));
-
-				//split up the options
-				GUILayout.EndHorizontal ();
-				GUILayout.Space (2);
-
-				//apply update to data
-				serializedObject.ApplyModifiedProperties ();
-
-				for (int b = 0; b < currentKeyList.arraySize; b++) {
-
-					GUILayout.BeginHorizontal ();
-
-					//display popup for key input
-					EditorGUILayout.LabelField ("Key", GUILayout.Width (40));
-					EditorGUILayout.PropertyField (currentKeyList.GetArrayElementAtIndex (b), GUIContent.none, GUILayout.Width (275));
-					EditorGUILayout.PropertyField (offset.GetArrayElementAtIndex (b), GUIContent.none, GUILayout.Width (40));
-					EditorGUILayout.PropertyField (keyType.GetArrayElementAtIndex (b), GUIContent.none, GUILayout.Width (100));
-
-
-					//split up the options
-					GUILayout.EndHorizontal ();
-					GUILayout.Space (2);
-
-				}
-
-				if (!privateFunction.boolValue) {
-					GUILayout.BeginHorizontal ();
-
-					//display string for key event
-					EditorGUILayout.LabelField ("Event", GUILayout.Width (40));
-					EditorGUILayout.PropertyField (currentKey.FindPropertyRelative ("keyEvent"), GUILayout.Width (415));
-
-
-					GUILayout.EndHorizontal ();
-				}
-
-				//end data section
 				GUILayout.EndVertical ();
-				GUILayout.Space (10);
+				GUILayout.EndVertical ();
 
 				serializedObject.ApplyModifiedProperties ();
+				GUI.backgroundColor = new Color (0.25f,0.25f,0.25f,1);
+				GUILayout.BeginVertical (EditorStyles.helpBox);
+				GUI.backgroundColor = new Color (0.9f, 0.9f, 0.9f, 0.5f);
+
+				//loop through current Axis list
+				serializedObject.Update ();
+				for (int b = 0; b < currentKeyAxisList.arraySize; b++) {
+					GUILayout.BeginVertical (EditorStyles.helpBox);
+					serializedObject.Update ();
+					//grab data
+					SerializedProperty currentKey = currentKeyAxisList.GetArrayElementAtIndex (b).FindPropertyRelative ("keyData");
+
+					//setup multi/single axis support
+					EditorGUILayout.PropertyField (currentKeyAxisList.GetArrayElementAtIndex (b).FindPropertyRelative ("multiAxis"));
+					EditorGUILayout.PropertyField (currentKeyAxisList.GetArrayElementAtIndex (b).FindPropertyRelative ("axis"));
+					if (currentKeyAxisList.GetArrayElementAtIndex (b).FindPropertyRelative ("multiAxis").boolValue) {
+						EditorGUILayout.PropertyField (currentKeyAxisList.GetArrayElementAtIndex (b).FindPropertyRelative ("axis2"));
+					}
+
+					//check if global vars
+					if (globalFunction.boolValue) {
+						//set global vars to required
+						currentKey.FindPropertyRelative ("function").boolValue = true;
+						currentKey.FindPropertyRelative ("functionName").stringValue = globalFunctionName.stringValue;
+					} else {
+						//if not display options for changing
+						EditorGUILayout.PropertyField (currentKey.FindPropertyRelative ("function"));
+						if (currentKey.FindPropertyRelative ("function").boolValue) {
+							EditorGUILayout.PropertyField (currentKey.FindPropertyRelative ("functionName"));
+						} else {
+							EditorGUILayout.PropertyField (currentKey.FindPropertyRelative ("publicFunction"));
+						}
+					}
+
+					//check if global vars
+					if (globalFunctionObj.boolValue) {
+						//set global vars to required
+						currentKey.FindPropertyRelative ("function").boolValue = true;
+						currentKey.FindPropertyRelative ("functionObject").objectReferenceValue = globalFunctionObject.objectReferenceValue;
+					} else {
+						//if not display options for changing
+						EditorGUILayout.PropertyField (currentKey.FindPropertyRelative ("functionObject"));
+					}
+
+					//display options for changing variable
+					EditorGUILayout.PropertyField (currentKey.FindPropertyRelative ("variableInput"));
+					if (currentKey.FindPropertyRelative ("expandInput").boolValue) {
+						//allow hiding of data block
+						if (GUILayout.Button ("Hide Variables")) {
+							currentKey.FindPropertyRelative ("expandInput").boolValue = false;
+						}
+						//display data block
+						if (currentKey.FindPropertyRelative ("variableInput").boolValue) {
+							displayKeyData (currentKey);
+						} else {
+							currentKey.FindPropertyRelative ("expandInput").boolValue = false;
+						}
+					} else {
+						//allow showing of data block
+						if (GUILayout.Button ("Display Variables")) {
+							currentKey.FindPropertyRelative ("expandInput").boolValue = true;
+						}
+					}
+					serializedObject.ApplyModifiedProperties ();
+					EditorGUILayout.EndVertical ();
+					GUILayout.Space (2);
+				}
+				serializedObject.ApplyModifiedProperties ();
+
+				GUILayout.EndVertical ();
+				GUILayout.Space (2);
+
+				GUILayout.BeginVertical (EditorStyles.helpBox);
+				GUILayout.BeginHorizontal (EditorStyles.helpBox);
+
+				serializedObject.Update ();
+				GUILayout.FlexibleSpace ();
+				//display adding for multiple keys
+				if (GUILayout.Button ("Add Button", GUILayout.Width (150))) {
+					//add new blank key data
+					currentKeyButtonList.InsertArrayElementAtIndex (currentKeyButtonList.arraySize);
+				}
+				if (GUILayout.Button ("Remove Button", GUILayout.Width (150))) {
+					//check if key data has data
+					if (currentKeyButtonList.arraySize > 0) {
+						//remove last key data
+						currentKeyButtonList.DeleteArrayElementAtIndex (currentKeyButtonList.arraySize - 1);
+					}
+				}
+				serializedObject.ApplyModifiedProperties ();
+				GUILayout.FlexibleSpace ();
+
+				//split up the options
+				GUILayout.EndHorizontal ();
+				GUILayout.Space (2);
+
+				GUI.backgroundColor = new Color (0.25f,0.25f,0.25f,1);
+				GUILayout.BeginVertical (EditorStyles.helpBox);
+				GUI.backgroundColor = new Color (0.9f, 0.9f, 0.9f, 0.5f);
+
+				serializedObject.Update ();
+				for (int b = 0; b < currentKeyButtonList.arraySize; b++) {
+					EditorGUILayout.BeginVertical (EditorStyles.helpBox);
+					serializedObject.Update ();
+					//grab data
+					EditorGUILayout.PropertyField (currentKeyButtonList.GetArrayElementAtIndex (b).FindPropertyRelative ("button"));
+					EditorGUILayout.PropertyField (currentKeyButtonList.GetArrayElementAtIndex (b).FindPropertyRelative ("keyType"));
+					SerializedProperty currentKey = currentKeyButtonList.GetArrayElementAtIndex (b).FindPropertyRelative ("keyData");
+
+					//check if global vars
+					if (globalFunction.boolValue) {
+						//set global vars to required
+						currentKey.FindPropertyRelative ("function").boolValue = true;
+						currentKey.FindPropertyRelative ("functionName").stringValue = globalFunctionName.stringValue;
+					} else {
+						//if not display options for changing
+						EditorGUILayout.PropertyField (currentKey.FindPropertyRelative ("function"));
+						if (currentKey.FindPropertyRelative ("function").boolValue) {
+							EditorGUILayout.PropertyField (currentKey.FindPropertyRelative ("functionName"));
+						} else {
+							EditorGUILayout.PropertyField (currentKey.FindPropertyRelative ("publicFunction"));
+						}
+					}
+
+					//check if global vars
+					if (globalFunctionObj.boolValue) {
+						//set global vars to required
+						currentKey.FindPropertyRelative ("function").boolValue = true;
+						currentKey.FindPropertyRelative ("functionObject").objectReferenceValue = globalFunctionObject.objectReferenceValue;
+					} else {
+						//if not display options for changing
+						EditorGUILayout.PropertyField (currentKey.FindPropertyRelative ("functionObject"));
+					}
+
+					//display options for changing variable
+					EditorGUILayout.PropertyField (currentKey.FindPropertyRelative ("variableInput"));
+					if (currentKey.FindPropertyRelative ("expandInput").boolValue) {
+						//allow hiding of data block
+						if (GUILayout.Button ("Hide Variables")) {
+							currentKey.FindPropertyRelative ("expandInput").boolValue = false;
+						}
+						//display data block
+						if (currentKey.FindPropertyRelative ("variableInput").boolValue) {
+							displayKeyData (currentKey);
+						} else {
+							currentKey.FindPropertyRelative ("expandInput").boolValue = false;
+						}
+					} else {
+						//allow showing of data block
+						if (GUILayout.Button ("Display Variables")) {
+							currentKey.FindPropertyRelative ("expandInput").boolValue = true;
+						}
+					}
+					serializedObject.ApplyModifiedProperties ();
+					EditorGUILayout.EndVertical ();
+					GUILayout.Space (2);
+				}
+				serializedObject.ApplyModifiedProperties ();
+
+				GUILayout.EndVertical ();
+				GUILayout.EndVertical ();
 
 			} else {
 				
 				//allow opening of element
-				GUI.backgroundColor = new Color(1,1,1,1);
-				GUILayout.BeginHorizontal(EditorStyles.helpBox);
+				GUI.backgroundColor = new Color (1, 1, 1, 1);
+				GUILayout.BeginHorizontal (EditorStyles.helpBox);
 				GUILayout.Space (100);
-				if (GUILayout.Button ("Show Element " + a.ToString (), GUILayout.Width(300))) {
+				if (GUILayout.Button ("Show Element " + a.ToString (), GUILayout.Width (300))) {
 					visible.GetArrayElementAtIndex (a).boolValue = true;
 				}
-				GUI.backgroundColor = new Color(0.9f,0.9f,0.9f,0.5f);
-				GUILayout.EndHorizontal();
+				GUI.backgroundColor = new Color (0.9f, 0.9f, 0.9f, 0.5f);
+				GUILayout.EndHorizontal ();
 				GUILayout.Space (10);
 			}
 		}
@@ -229,6 +308,120 @@ public class MultiInputEditor : Editor {
 		GUILayout.EndVertical();
 		
 		serializedObject.ApplyModifiedProperties ();
+	}
+
+	void displayKeyData(SerializedProperty currentKey) {
+		//display variable data block
+		SerializedProperty data = currentKey.FindPropertyRelative ("data");
+		EditorGUILayout.BeginVertical (EditorStyles.helpBox);
+
+		//split up the data
+		GUILayout.Space (2);
+		GUILayout.BeginHorizontal ();
+		EditorGUILayout.LabelField ("Axis Value", GUILayout.Width(80));
+		EditorGUILayout.FloatField (data.FindPropertyRelative ("axisValue").floatValue);
+		GUILayout.EndHorizontal ();
+
+		//split up the data
+		GUILayout.Space (2);
+		GUILayout.BeginHorizontal ();
+		EditorGUILayout.LabelField ("Multi Axis Value", GUILayout.Width(100));
+		EditorGUILayout.Vector2Field ("", data.FindPropertyRelative ("multiAxisValue").vector2Value);
+		GUILayout.EndHorizontal ();
+
+		//split up the data
+		GUILayout.Space (2);
+		GUILayout.BeginHorizontal ();
+		EditorGUILayout.LabelField ("Bool", GUILayout.Width(40));
+		EditorGUILayout.PropertyField(data.FindPropertyRelative("b"), GUIContent.none);
+		GUILayout.EndHorizontal ();
+
+		//split up the data
+		GUILayout.Space (2);
+		GUILayout.BeginHorizontal ();
+		EditorGUILayout.LabelField ("Byte", GUILayout.Width(40));
+		EditorGUILayout.PropertyField(data.FindPropertyRelative("by"), GUIContent.none);
+		GUILayout.EndHorizontal ();
+
+		//split up the data
+		GUILayout.Space (2);
+		GUILayout.BeginHorizontal ();
+		EditorGUILayout.LabelField ("Char", GUILayout.Width(40));
+		EditorGUILayout.PropertyField(data.FindPropertyRelative("c"), GUIContent.none);
+		GUILayout.EndHorizontal ();
+
+		//split up the data
+		GUILayout.Space (2);
+		GUILayout.BeginHorizontal ();
+		EditorGUILayout.LabelField ("Float", GUILayout.Width(40));
+		EditorGUILayout.PropertyField(data.FindPropertyRelative("f"), GUIContent.none);
+		GUILayout.EndHorizontal ();
+
+		//split up the data
+		GUILayout.Space (2);
+		GUILayout.BeginHorizontal ();
+		EditorGUILayout.LabelField ("Int", GUILayout.Width(40));
+		EditorGUILayout.PropertyField(data.FindPropertyRelative("i"), GUIContent.none);
+		GUILayout.EndHorizontal ();
+
+		//split up the data
+		GUILayout.Space (2);
+		GUILayout.BeginHorizontal ();
+		EditorGUILayout.LabelField ("GameObject", GUILayout.Width(80));
+		EditorGUILayout.PropertyField(data.FindPropertyRelative("obj"), GUIContent.none);
+		GUILayout.EndHorizontal ();
+
+		//split up the data
+		GUILayout.Space (2);
+		GUILayout.BeginHorizontal ();
+		EditorGUILayout.LabelField ("MonoBehaviour", GUILayout.Width(100));
+		EditorGUILayout.ObjectField(data.FindPropertyRelative("sc"), GUIContent.none);
+		GUILayout.EndHorizontal ();
+
+		//split up the data
+		GUILayout.Space (2);
+		GUILayout.BeginHorizontal ();
+		EditorGUILayout.LabelField ("String", GUILayout.Width(80));
+		EditorGUILayout.PropertyField(data.FindPropertyRelative("s"), GUIContent.none);
+		GUILayout.EndHorizontal ();
+
+
+		//split up the data
+		GUILayout.Space (2);
+		GUILayout.BeginHorizontal ();
+		EditorGUILayout.LabelField ("Transform", GUILayout.Width(80));
+		EditorGUILayout.PropertyField(data.FindPropertyRelative("t"), GUIContent.none);
+		GUILayout.EndHorizontal ();
+
+		//split up the data
+		GUILayout.Space (2);
+		GUILayout.BeginHorizontal ();
+		EditorGUILayout.LabelField ("Unity Event", GUILayout.Width(80));
+		EditorGUILayout.PropertyField(data.FindPropertyRelative("u"), GUIContent.none);
+		GUILayout.EndHorizontal ();
+
+		//split up the data
+		GUILayout.Space (2);
+		GUILayout.BeginHorizontal ();
+		EditorGUILayout.LabelField ("Vector2", GUILayout.Width(80));
+		EditorGUILayout.PropertyField(data.FindPropertyRelative("v2"), GUIContent.none);
+		GUILayout.EndHorizontal ();
+
+		//split up the data
+		GUILayout.Space (2);
+		GUILayout.BeginHorizontal ();
+		EditorGUILayout.LabelField ("Vector3", GUILayout.Width(80));
+		EditorGUILayout.PropertyField(data.FindPropertyRelative("v3"), GUIContent.none);
+		GUILayout.EndHorizontal ();
+
+		//split up the data
+		GUILayout.Space (2);
+		GUILayout.BeginHorizontal ();
+		EditorGUILayout.LabelField ("Vector4", GUILayout.Width(80));
+		data.FindPropertyRelative("v4").vector4Value = EditorGUILayout.Vector4Field("", data.FindPropertyRelative("v4").vector4Value);
+		GUILayout.EndHorizontal ();
+
+		EditorGUILayout.EndVertical();
 	}
 
 }
