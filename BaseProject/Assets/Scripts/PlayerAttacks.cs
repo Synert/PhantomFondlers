@@ -7,19 +7,19 @@ public class PlayerAttacks : MonoBehaviour {
     public Transform m_weapon;
     int playerNumber = 1;
     float cooldown = 0.0f;
-    bool drawing = false;
-    float drawTime = 0.0f;
-    List<Vector2> posList;
-    int[] quadList = new int[8];
-    int curQuads = 0;
-    int lastQuad = -1;
-    float size = 30.0f;
-    int quadLimit = 5;
-	Vector2 inputs;
+    bool attacking = false;
+    int quad = 0;
+    bool quadSet = false;
+    bool resetAttack = false;
+    float size = 45f;
+
+    float power = 0.0f;
+    float powerCap = 1500.0f;
+    Vector2 inputs;
 
     // Use this for initialization
     void Start () {
-        posList = new List<Vector2>();
+
 	}
 
 	void grabInputs (variableData _var) {
@@ -29,9 +29,6 @@ public class PlayerAttacks : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
-        //Vector2 inputs;
-        //inputs.x = Input.GetAxis("AttackHorz" + playerNumber);
-        //inputs.y = -Input.GetAxis("AttackVert" + playerNumber);
 
         if (inputs.magnitude > 1.0f)
         {
@@ -43,65 +40,74 @@ public class PlayerAttacks : MonoBehaviour {
             cooldown -= 1000.0f * Time.deltaTime;
         }
 
-        if (inputs.magnitude > 0.5f && cooldown <= 0.0f)
+        if(m_weapon == null)
         {
-            float angle = Mathf.Atan2(inputs.x, inputs.y) * Mathf.Rad2Deg;
-            if (!drawing)
+            attacking = false;
+            quadSet = false;
+        }
+
+        float angle = Mathf.Atan2(inputs.x, inputs.y) * Mathf.Rad2Deg;
+
+        if(inputs.magnitude < 0.5f)
+        {
+            resetAttack = true;
+        }
+
+        if (inputs.magnitude > 0.5f && cooldown <= 0.0f && m_weapon != null && resetAttack)
+        {
+            if (!attacking)
             {
-                drawing = true;
-                posList.Clear();
+                attacking = true;
             }
-            if(lastQuad == -1)
+            if(!quadSet)
             {
-                Debug.Log(curQuads + " " + Time.time);
-                quadList[curQuads] = GetQuadrant(angle, size);
-                lastQuad = quadList[curQuads];
-                curQuads++;
+                quad = GetQuadrant(angle, size);
+                quadSet = true;
+                //m_weapon.GetComponentInChildren<WeaponPickup>().Charge(quad);
+            }
+            power += 1000.0f * Time.deltaTime;
+            if (power >= powerCap)
+            {
+                cooldown = 250.0f;
+            }
+            if (!m_weapon.GetComponentInChildren<WeaponPickup>().GetAngleLock())
+            {
+                m_weapon.eulerAngles = new Vector3(m_weapon.eulerAngles.x, m_weapon.eulerAngles.y, -angle);
+                m_weapon.GetComponentInChildren<WeaponPickup>().ChargeAngle(-angle, power);
             }
             else
             {
-                if(GetQuadrant(angle, size) != lastQuad)
-                {
-                    quadList[curQuads] = GetQuadrant(angle, size);
-                    lastQuad = quadList[curQuads];
-                    curQuads++;
-                }
-                if(curQuads >= quadLimit)
-                {
-                    cooldown = 250.0f;
-                }
-            }
-            m_weapon.eulerAngles = new Vector3(m_weapon.eulerAngles.x, m_weapon.eulerAngles.y, -angle);
-            posList.Add(inputs);
-
-            Vector2 prevPos = posList[0];
-            foreach(Vector2 pos in posList)
-            {
-                Debug.DrawLine((Vector2)transform.position + prevPos * 2.0f, (Vector2)transform.position + pos * 2.0f, Color.blue, 0.5f);
-                prevPos = pos;
+                float newAngle = quad * size;
+                m_weapon.eulerAngles = new Vector3(m_weapon.eulerAngles.x, m_weapon.eulerAngles.y, newAngle - 90.0f);
+                m_weapon.GetComponentInChildren<WeaponPickup>().ChargeDirection(quad, power);
             }
             //Debug.DrawLine(transform.position, inputs, Color.blue);
         }
-        else if(drawing)
+        else if(attacking)
         {
-            drawing = false;
-            cooldown = 250.0f;
+            attacking = false;
+            resetAttack = false;
+            cooldown = m_weapon.GetComponentInChildren<WeaponPickup>().GetAttackTime();
+            quadSet = false;
 
             Vector3 prevPos = transform.position;
 
-            for(int i = 0; i < curQuads; i++)
+            float newAngle = quad * size;
+            if(!m_weapon.GetComponentInChildren<WeaponPickup>().GetAngleLock())
             {
-                float newAngle = quadList[i] * size;
-                Quaternion.Euler(0.0f, 0.0f, newAngle);
+                m_weapon.eulerAngles = new Vector3(m_weapon.eulerAngles.x, m_weapon.eulerAngles.y, -angle);
+                m_weapon.GetComponentInChildren<WeaponPickup>().AttackAngle(angle, power);
+                Debug.DrawLine(prevPos, transform.position + Quaternion.AngleAxis(90.0f - angle, Vector3.forward) * transform.right * 2.0f, Color.yellow, 1.0f);
+            }
+            else
+            {
+                m_weapon.eulerAngles = new Vector3(m_weapon.eulerAngles.x, m_weapon.eulerAngles.y, newAngle - 90.0f);
+                
+                m_weapon.GetComponentInChildren<WeaponPickup>().AttackDirection(quad, power);
                 Debug.DrawLine(prevPos, transform.position + Quaternion.AngleAxis(newAngle, Vector3.forward) * transform.right * 2.0f, Color.yellow, 1.0f);
-                prevPos = transform.position + Quaternion.AngleAxis(newAngle, Vector3.forward) * transform.right * 2.0f;
             }
 
-            quadList[0] = -1;
-            quadList[1] = -1;
-            quadList[2] = -1;
-            curQuads = 0;
-            lastQuad = -1;
+            power = 0.0f;
         }
 
         //m_weapon.LookAt(m_weapon.position + inputs);
@@ -131,9 +137,10 @@ public class PlayerAttacks : MonoBehaviour {
 
     int GetQuadrant(float angle, float size)
     {
-        int start = 3;
+        int maxCounter = (int)Mathf.Round(360.0f / size);
+        int start = (int)Mathf.Round(maxCounter / 4);
         int counter = 0;
-        angle += 22.5f;
+        angle += (size / 2.0f);
         if (angle < 0)
         {
             angle += 360.0f;
@@ -143,7 +150,6 @@ public class PlayerAttacks : MonoBehaviour {
             angle -= 360.0f;
         }
 
-        int maxCounter = (int)Mathf.Round(360.0f / size);
         int ret = 0;
 
         while((counter+1)*size <= 360)
