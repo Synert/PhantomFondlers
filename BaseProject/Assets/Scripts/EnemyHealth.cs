@@ -12,6 +12,7 @@ public class EnemyHealth : MonoBehaviour
     public float SpiritLevel = 1.0f;
     private float currCountdownValue = 0.1f;
     private bool IsInvisible;
+    public ParticleSystem InvisibleAura;
 
     void Start()
     {
@@ -30,6 +31,7 @@ public class EnemyHealth : MonoBehaviour
         if (Input.GetKeyDown(InvincibilityKey))
         {
             IsInvisible = true;
+            InvisibleAura.Play();
             StartCoroutine(StartCountdown());
         }
         if (IsInvisible == true)
@@ -40,6 +42,7 @@ public class EnemyHealth : MonoBehaviour
         {
             CanTakeDamage = true;
             IsInvisible = false;
+            InvisibleAura.Stop();
             SpiritLevel = 1.0f;
         }
         
