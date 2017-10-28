@@ -342,10 +342,10 @@ public class controllerButtonData {
 				testButton (state.DPad.Right, previousState.DPad.Right, out controllerVariables[13]);
 			}
 			if (tsl) {
-				ThumbStickLeft.inputs = new Vector2 (state.ThumbSticks.Left.X, state.ThumbSticks.Left.X);
+				ThumbStickLeft.inputs = new Vector2 (state.ThumbSticks.Left.X, state.ThumbSticks.Left.Y);
 			}
 			if (tsr) {
-				ThumbStickRight.inputs = new Vector2 (state.ThumbSticks.Right.X, state.ThumbSticks.Right.X);
+				ThumbStickRight.inputs = new Vector2 (state.ThumbSticks.Right.X, state.ThumbSticks.Right.Y);
 			}
 			if (tl) {
 				TriggerLeft.input = state.Triggers.Left;
