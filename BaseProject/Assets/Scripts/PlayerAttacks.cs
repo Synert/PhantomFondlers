@@ -28,6 +28,7 @@ public class PlayerAttacks : MonoBehaviour
     void grabInputs(variableData _var)
     {
         inputs = _var.state.ThumbStickRight.inputs;
+        //trigger = _var.state.TriggerRight.input;
         //inputs.y = -inputs.y;
     }
 
@@ -229,6 +230,8 @@ public class PlayerAttacks : MonoBehaviour
         m_weapon.GetComponent<WeaponPickup>().Swapped();
         m_weapon.rotation = oldRot;
         Destroy(new_weapon.gameObject);
+
+        m_weapon.GetComponent<WeaponPickup>().SetOwner(gameObject);
     }
 
     public void SetPlayerNumber(int set)

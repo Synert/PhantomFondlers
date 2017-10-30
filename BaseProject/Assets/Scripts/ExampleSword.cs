@@ -41,6 +41,16 @@ public class ExampleSword : WeaponPickup {
         Quaternion orig = transform.rotation;
         transform.rotation = Quaternion.identity;
         Debug.DrawLine(transform.position, transform.position + Quaternion.AngleAxis(angle, Vector3.forward) * transform.right * 2.0f, Color.red, 1.0f);
+
+        Transform newProjectile = Instantiate(projectile, GetOwner().transform.position, orig);
+        //newProjectile.position = transform.position;
+        //newProjectile.rotation = orig;
+        //newProjectile.Translate(newProjectile.right * 1.0f);
+
+        newProjectile.GetComponent<Projectile>().SetOwner(GetOwner());
+        newProjectile.GetComponent<Projectile>().SetWeapon(gameObject);
+        newProjectile.GetComponent<Projectile>().SetDamage(damage);
+
         transform.rotation = orig;
     }
 

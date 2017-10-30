@@ -49,11 +49,12 @@ public class Invincibility : MonoBehaviour
     
     }
 
-    void dodge()
+    void dodge(variableData _var)
     {
-        if (GetComponent<Rigidbody2D>().velocity != Vector2.zero)
+        float stickVel = -_var.state.ThumbStickLeft.inputs.x;
+        if (cooldown <= 0)
         {
-            if (GetComponent<Rigidbody2D>().velocity.x > -playerController.MaxSpeed && cooldown <= 0)
+            if (GetComponent<Rigidbody2D>().velocity.x > -playerController.MaxSpeed && stickVel < 0)
             {
                 GetComponent<Rigidbody2D>().AddForce(new Vector2(-playerController.Acceleration, 0.0f));
                 Debug.Log("Moving Right");
@@ -66,7 +67,7 @@ public class Invincibility : MonoBehaviour
                 isDogding = true;
                 isInvincible = true;
             }
-            if (GetComponent<Rigidbody2D>().velocity.x < playerController.MaxSpeed && cooldown <= 0)
+            else if (GetComponent<Rigidbody2D>().velocity.x < playerController.MaxSpeed && stickVel > 0)
             {
                 GetComponent<Rigidbody2D>().AddForce(new Vector2(playerController.Acceleration, 0.0f));
                 Debug.Log("Moving Left");

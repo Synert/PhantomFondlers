@@ -54,9 +54,9 @@ public class PlayerController : MonoBehaviour
 	//==============================================
 	//Deal with buttonMashing to revive/tickle to death
 	//needs to be polished but fundementals are done
-	void takeDamage() {
+	public void takeDamage(int damage) {
 		if (!movementPause) {
-			arbitaryHealth -= 1;
+			arbitaryHealth -= damage;
 			if (arbitaryHealth <= 0) {
 				movementPause = true;
 			}

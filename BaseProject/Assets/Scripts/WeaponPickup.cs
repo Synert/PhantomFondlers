@@ -10,6 +10,8 @@ public class WeaponPickup : MonoBehaviour
     public bool isRanged = false;
     float cooldown = 0.0f;
     public Transform projectile;
+    public int damage;
+    GameObject owner;
 
     public enum DIRECTION
     {
@@ -54,6 +56,10 @@ public class WeaponPickup : MonoBehaviour
     public void Swapped()
     {
         cooldown = 1000.0f;
+        if(owner != null)
+        {
+            owner = null;
+        }
     }
 
     public bool GetAngleLock()
@@ -167,5 +173,19 @@ public class WeaponPickup : MonoBehaviour
         transform.rotation = Quaternion.identity;
         Debug.DrawLine(transform.position, transform.position + Quaternion.AngleAxis(angle, Vector3.forward) * transform.right * 2.0f, Color.green, 1.0f);
         transform.rotation = orig;
+    }
+
+    public void SetOwner(GameObject set)
+    {
+        if(owner != null)
+        {
+            return;
+        }
+        owner = set;
+    }
+
+    public GameObject GetOwner()
+    {
+        return owner;
     }
 }
