@@ -480,9 +480,9 @@ public class MultiInputEditor : Editor {
 			}
 			labelWithProperty ("Xbox A", 140, varLocation.GetArrayElementAtIndex(0), selectedVars.GetArrayElementAtIndex (0), true, true, 2);
 
-			labelWithProperty ("Xbox X", 140, varLocation.GetArrayElementAtIndex(1), selectedVars.GetArrayElementAtIndex (1), true, true, 2);
+			labelWithProperty ("Xbox B", 140, varLocation.GetArrayElementAtIndex(1), selectedVars.GetArrayElementAtIndex (1), true, true, 2);
 
-			labelWithProperty ("Xbox B", 140, varLocation.GetArrayElementAtIndex(2), selectedVars.GetArrayElementAtIndex (2), true, true, 2);
+			labelWithProperty ("Xbox X", 140, varLocation.GetArrayElementAtIndex(2), selectedVars.GetArrayElementAtIndex (2), true, true, 2);
 
 			labelWithProperty ("Xbox Y", 140, varLocation.GetArrayElementAtIndex(3), selectedVars.GetArrayElementAtIndex (3), true, true, 2);
 		} else {

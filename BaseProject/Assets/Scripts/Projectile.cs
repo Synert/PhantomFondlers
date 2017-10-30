@@ -6,16 +6,17 @@ public class Projectile : MonoBehaviour {
 
     GameObject owner;
     GameObject weapon;
+    public float speed;
     int damage = 0;
 
 	// Use this for initialization
 	void Start () {
-		
+        transform.Translate(0, 0, -5);
 	}
 	
 	// Update is called once per frame
 	void Update () {
-        GetComponent<Rigidbody2D>().velocity = transform.up * 5.0f;
+        GetComponent<Rigidbody2D>().velocity = transform.up * speed;
 	}
 
     public void SetOwner(GameObject set)

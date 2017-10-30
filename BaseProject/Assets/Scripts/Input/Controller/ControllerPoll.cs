@@ -11,7 +11,7 @@ public class ControllerPoll : MonoBehaviour {
 	// Update is called once per frame
 	void Update () {
 		for (int a = 0; a < 4; a++) {
-			GamePadState con = GamePad.GetState ((PlayerIndex)a);
+			GamePadState con = GamePad.GetState ((PlayerIndex)a, GamePadDeadZone.Circular);
 			if (con.IsConnected) {
 				Controllers [a] = true;
 				ControllerData [a].UpdateKeys (con);

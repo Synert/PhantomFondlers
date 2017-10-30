@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Audio;
 
 public class PlayerController : MonoBehaviour
 {
@@ -43,10 +44,14 @@ public class PlayerController : MonoBehaviour
 	bool horizontal = false;
 	public bool movementPause = false;
 
+    //Audio
+    public AudioClip[] AudioClip;
+   
+    
     void Start()
     {
-
-		rend = GetComponent<Renderer>();
+        
+        rend = GetComponent<Renderer>();
 		GetComponent<BoxCollider2D> ().size = (GetComponent<SpriteRenderer> ().sprite.rect.size / 100);
 
     }
@@ -56,10 +61,17 @@ public class PlayerController : MonoBehaviour
 	//needs to be polished but fundementals are done
 	public void takeDamage(int damage) {
 		if (!movementPause) {
-			arbitaryHealth -= damage;
-			if (arbitaryHealth <= 0) {
-				movementPause = true;
-			}
+            arbitaryHealth -= damage;
+			if (arbitaryHealth <= 0)
+            {
+               //GetComponent<BoxCollider2D>().isTrigger = true;
+               GetComponent<Rigidbody2D>().mass = 100;
+                movementPause = true;
+                playSound(3);
+			} else
+            {
+                playSound(2);
+            }
 		}
 	}
 
@@ -69,9 +81,6 @@ public class PlayerController : MonoBehaviour
 	//if other health below 0 count down other
 	void buttonMash () {
 		if (arbitaryHealth <= 0) {
-			if (!movementPause) {
-				movementPause = true;//debug
-			}
 			GetComponent<Rigidbody2D> ().velocity = Vector2.zero;
 			if (ontopOf) {
 				currentCount += increaseWhenOntopCount;
@@ -99,15 +108,19 @@ public class PlayerController : MonoBehaviour
 			ontopOf.movementPause = false;
 			ontopOf.ontopOf = null;
 			Destroy (this.gameObject);
-		} else if (currentCount >= respawnCount) {
-			movementPause = false;
+		} else if (currentCount >= respawnCount)
+        {
+            //GetComponent<BoxCollider2D>().isTrigger = false;
+            GetComponent<Rigidbody2D>().mass = 1;
+            movementPause = false;
 			arbitaryHealth = respawnHealth;
 			currentCount = 0;
 		}
 	}
 
 	//if other has no ontop set ontop of other and self to required
-	void OnTriggerEnter2D (Collider2D other) {
+	void OnCollisionEnter2D (Collision2D _other) {
+        Collider2D other = _other.collider;
 		if (other.GetComponent<PlayerController> ()) {
 			if (other.GetComponent<PlayerController> ().arbitaryHealth <= 0) {
 				if (!movementPause) {
@@ -121,8 +134,10 @@ public class PlayerController : MonoBehaviour
 	}
 
 	//if other has ontop set ontop of other and self to required
-	void OnTriggerExit2D (Collider2D other) {
-		if (other.GetComponent<PlayerController> ()) {
+	void OnCollisionExit2D(Collision2D _other)
+    {
+        Collider2D other = _other.collider;
+        if (other.GetComponent<PlayerController> ()) {
 			if (ontopOf == this) {
 				if (other.GetComponent<PlayerController> ().ontopOf) {
 					ontopOf = null;
@@ -183,11 +198,27 @@ public class PlayerController : MonoBehaviour
 				if (isOnGround || (canDoubleJump && enableDoubleJump || wallHitJump && enableWallJump)) {
 					bool wallHit = false;
 					int wallHitDirection = 0;
-
+                    
 					bool leftWallHit = onLeftWall ();
 					bool rightWallHit = onRightWall ();
 
-					if (horizontal) {
+                    if (isOnGround || (canDoubleJump && enableDoubleJump) || leftWallHit || rightWallHit)
+                    {
+                        if (isOnGround == true)
+                        {
+                            playSound(0, 1.25f);//SOund
+                        }
+                        else if (!isOnGround && !(leftWallHit || rightWallHit))
+                        {
+                            playSound(0, 0.5f);
+                        }
+                        else
+                        {
+                            playSound(0, 0.7f);
+                        }
+                    }
+
+                    if (horizontal) {
 						if (leftWallHit && enableWallJump) {
 							wallHit = true;
 							wallHitDirection = 1;
@@ -242,7 +273,7 @@ public class PlayerController : MonoBehaviour
 
         if (Input.GetKeyDown("space"))
         {
-
+           
         }
 
 		horizontal = false;
@@ -353,6 +384,13 @@ public class PlayerController : MonoBehaviour
         Debug.DrawLine(lineStart, searchVector,Color.red);
         return hit;
 
+    }
+
+    public void playSound(int _clip, float defaultVal = 1)
+    {
+        GetComponent<AudioSource>().pitch = defaultVal;
+       GetComponent<AudioSource>().clip = AudioClip[_clip];
+        GetComponent<AudioSource>().Play();
     }
 
 }

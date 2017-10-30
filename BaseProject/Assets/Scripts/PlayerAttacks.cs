@@ -77,6 +77,7 @@ public class PlayerAttacks : MonoBehaviour
             if (!attacking)
             {
                 attacking = true;
+             
             }
             if (!quadSet)
             {
@@ -162,6 +163,7 @@ public class PlayerAttacks : MonoBehaviour
             if (!attacking)
             {
                 attacking = true;
+                GetComponent<PlayerController>().playSound(1);
             }
             if (!quadSet)
             {
@@ -217,6 +219,7 @@ public class PlayerAttacks : MonoBehaviour
 
     public void SwitchWeapon(Transform new_weapon)
     {
+
         Quaternion oldRot = m_weapon.rotation;
         Transform old_weapon = Instantiate(m_weapon);
         old_weapon.localScale = new_weapon.localScale;
@@ -225,6 +228,7 @@ public class PlayerAttacks : MonoBehaviour
         old_weapon.localRotation = Quaternion.identity;
         Destroy(m_weapon.gameObject);
         m_weapon = Instantiate(new_weapon, transform);
+        m_weapon.GetComponent<WeaponPickup>().SetOwner(null);
         m_weapon.localPosition = Vector3.zero;
         m_weapon.localScale = Vector3.one;
         m_weapon.GetComponent<WeaponPickup>().Swapped();

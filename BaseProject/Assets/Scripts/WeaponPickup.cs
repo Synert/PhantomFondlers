@@ -48,7 +48,11 @@ public class WeaponPickup : MonoBehaviour
             {
                 PlayerAttacks player = col.GetComponentInChildren<PlayerAttacks>();
 
-                player.SwitchWeapon(transform);
+                if (GetOwner() == null)
+                {
+                    player.SwitchWeapon(transform);
+                    
+                }
             }
         }
     }
