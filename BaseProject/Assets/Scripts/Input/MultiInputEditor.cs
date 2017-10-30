@@ -59,6 +59,7 @@ public class MultiInputEditor : Editor {
         //loop through each key data and display change options
 		for (int a = 0; a < keys.arraySize; a++) {
 			//check if current key is visible
+			EditorGUILayout.BeginVertical(EditorStyles.helpBox);
 			if (visible.GetArrayElementAtIndex (a).boolValue) {
 				//grab current keyInfo
 				SerializedProperty currentKeySet = keys.GetArrayElementAtIndex (a);
@@ -102,12 +103,14 @@ public class MultiInputEditor : Editor {
 				if (globalFunctionObj.boolValue) {
 					EditorGUILayout.PropertyField (globalFunctionObject);
 				}
+
+				EditorGUILayout.PropertyField (currentKeySet.FindPropertyRelative ("inputsAccepted"));
 					
 				GUILayout.BeginVertical (EditorStyles.helpBox);
 				GUILayout.BeginHorizontal (EditorStyles.helpBox);
 
 				GUILayout.FlexibleSpace ();
-				//display adding for multiple axxis
+				//display adding for multiple axis
 				if (GUILayout.Button ("Add Axis", GUILayout.Width (150))) {
 					//add new blank key data
 					currentKeyAxisList.InsertArrayElementAtIndex (currentKeyAxisList.arraySize);
@@ -126,7 +129,6 @@ public class MultiInputEditor : Editor {
 				GUILayout.Space (2);
 
 				GUILayout.EndVertical ();
-				GUILayout.EndVertical ();
 
 				serializedObject.ApplyModifiedProperties ();
 				GUI.backgroundColor = new Color (0.25f,0.25f,0.25f,1);
@@ -142,29 +144,16 @@ public class MultiInputEditor : Editor {
 					SerializedProperty currentKey = currentKeyAxisList.GetArrayElementAtIndex (b).FindPropertyRelative ("keyData");
 
 					//setup multi/single axis support
-					EditorGUILayout.PropertyField (currentKeyAxisList.GetArrayElementAtIndex (b).FindPropertyRelative ("multiAxis"));
-					EditorGUILayout.PropertyField (currentKeyAxisList.GetArrayElementAtIndex (b).FindPropertyRelative ("advancedDeadZone"));
+					EditorGUILayout.BeginHorizontal();
+					EditorGUILayout.PropertyField (currentKeyAxisList.GetArrayElementAtIndex (b).FindPropertyRelative ("dualAxis"));
+					EditorGUILayout.EndHorizontal ();
+
 					EditorGUILayout.PropertyField (currentKeyAxisList.GetArrayElementAtIndex (b).FindPropertyRelative ("axis"));
-					if (currentKeyAxisList.GetArrayElementAtIndex (b).FindPropertyRelative ("advancedDeadZone").boolValue) {
 						EditorGUILayout.PropertyField (currentKeyAxisList.GetArrayElementAtIndex (b).FindPropertyRelative ("axisDeadZone"));
-					} else {
-						GUILayout.BeginHorizontal ();
-						EditorGUILayout.LabelField ("Axis 1 Dead Zone", GUILayout.Width (110));
-						float tempDeadZone = EditorGUILayout.FloatField (currentKeyAxisList.GetArrayElementAtIndex (b).FindPropertyRelative ("axisDeadZone").vector2Value.y);
-						currentKeyAxisList.GetArrayElementAtIndex (b).FindPropertyRelative ("axisDeadZone").vector2Value = new Vector2(-tempDeadZone, tempDeadZone);
-						GUILayout.EndHorizontal ();
-					}
-					if (currentKeyAxisList.GetArrayElementAtIndex (b).FindPropertyRelative ("multiAxis").boolValue) {
+
+					if (currentKeyAxisList.GetArrayElementAtIndex (b).FindPropertyRelative ("dualAxis").boolValue) {
 						EditorGUILayout.PropertyField (currentKeyAxisList.GetArrayElementAtIndex (b).FindPropertyRelative ("axis2"));
-						if (currentKeyAxisList.GetArrayElementAtIndex (b).FindPropertyRelative ("advancedDeadZone").boolValue) {
-							EditorGUILayout.PropertyField (currentKeyAxisList.GetArrayElementAtIndex (b).FindPropertyRelative ("axis2DeadZone"));
-						} else {
-							GUILayout.BeginHorizontal ();
-							EditorGUILayout.LabelField ("Axis 2 Dead Zone", GUILayout.Width (110));
-							float tempDeadZone = EditorGUILayout.FloatField (currentKeyAxisList.GetArrayElementAtIndex (b).FindPropertyRelative ("axis2DeadZone").vector2Value.y);
-							currentKeyAxisList.GetArrayElementAtIndex (b).FindPropertyRelative ("axis2DeadZone").vector2Value = new Vector2(-tempDeadZone, tempDeadZone);
-							GUILayout.EndHorizontal ();
-						}
+						EditorGUILayout.PropertyField (currentKeyAxisList.GetArrayElementAtIndex (b).FindPropertyRelative ("axis2DeadZone"));
 					}
 
 					//check if global vars
@@ -254,9 +243,46 @@ public class MultiInputEditor : Editor {
 				for (int b = 0; b < currentKeyButtonList.arraySize; b++) {
 					EditorGUILayout.BeginVertical (EditorStyles.helpBox);
 					serializedObject.Update ();
-					//grab data
-					EditorGUILayout.PropertyField (currentKeyButtonList.GetArrayElementAtIndex (b).FindPropertyRelative ("button"));
-					EditorGUILayout.PropertyField (currentKeyButtonList.GetArrayElementAtIndex (b).FindPropertyRelative ("keyType"));
+
+					SerializedProperty currentKeyButtonKey = currentKeyButtonList.GetArrayElementAtIndex (b);
+
+					GUILayout.BeginHorizontal (EditorStyles.helpBox);
+
+					serializedObject.Update ();
+					GUILayout.FlexibleSpace ();
+					//display adding for multiple keys
+					if (GUILayout.Button ("Add Key", GUILayout.Width (150))) {
+						//add new blank key data
+						currentKeyButtonKey.FindPropertyRelative ("button").InsertArrayElementAtIndex (currentKeyButtonKey.FindPropertyRelative ("button").arraySize);
+						currentKeyButtonKey.FindPropertyRelative ("keyType").InsertArrayElementAtIndex (currentKeyButtonKey.FindPropertyRelative ("keyType").arraySize);
+					}
+					if (GUILayout.Button ("Remove Key", GUILayout.Width (150))) {
+						//check if key data has data
+						if (currentKeyButtonKey.FindPropertyRelative ("button").arraySize > 0) {
+							//remove last key data
+							currentKeyButtonKey.FindPropertyRelative ("button").DeleteArrayElementAtIndex (currentKeyButtonKey.FindPropertyRelative ("button").arraySize - 1);
+							currentKeyButtonKey.FindPropertyRelative ("keyType").DeleteArrayElementAtIndex (currentKeyButtonKey.FindPropertyRelative ("keyType").arraySize - 1);
+						}
+					}
+					serializedObject.ApplyModifiedProperties ();
+					GUILayout.FlexibleSpace ();
+
+					//split up the options
+					GUILayout.EndHorizontal ();
+
+					for (int c = 0; c < currentKeyButtonKey.FindPropertyRelative ("button").arraySize; c++) {
+
+						GUILayout.BeginHorizontal ();
+
+						//grab data
+						EditorGUILayout.LabelField("Key " + c, GUILayout.Width(50));
+						EditorGUILayout.PropertyField (currentKeyButtonList.GetArrayElementAtIndex (b).FindPropertyRelative ("button").GetArrayElementAtIndex(c), GUIContent.none);
+						EditorGUILayout.PropertyField (currentKeyButtonList.GetArrayElementAtIndex (b).FindPropertyRelative ("keyType").GetArrayElementAtIndex(c), GUIContent.none);
+
+						GUILayout.EndHorizontal ();
+
+					}
+
 					SerializedProperty currentKey = currentKeyButtonList.GetArrayElementAtIndex (b).FindPropertyRelative ("keyData");
 
 					//check if global vars
@@ -314,7 +340,8 @@ public class MultiInputEditor : Editor {
 				GUILayout.EndVertical ();
 				GUILayout.EndVertical ();
 
-				GUILayout.BeginHorizontal ();
+				GUILayout.BeginVertical (EditorStyles.helpBox);
+				GUILayout.BeginHorizontal (EditorStyles.helpBox);
 				GUILayout.FlexibleSpace ();
 
 				serializedObject.Update ();
@@ -335,13 +362,18 @@ public class MultiInputEditor : Editor {
 				GUILayout.FlexibleSpace ();
 				GUILayout.EndHorizontal ();
 
+
+				GUI.backgroundColor = new Color (0.25f,0.25f,0.25f,1);
+				GUILayout.BeginVertical (EditorStyles.helpBox);
+				GUI.backgroundColor = new Color (0.9f, 0.9f, 0.9f, 0.5f);
+
 				for (int b = 0; b < currentKeyGamepadList.arraySize; b++) {
 					serializedObject.Update ();
 
 					EditorGUILayout.BeginVertical (EditorStyles.helpBox);
 
 					EditorGUILayout.PropertyField(currentKeyGamepadList.GetArrayElementAtIndex (b).FindPropertyRelative ("controller"));
-					SerializedProperty state = currentKeyGamepadList.GetArrayElementAtIndex (b).FindPropertyRelative ("keyData").FindPropertyRelative("data").FindPropertyRelative("state");
+					SerializedProperty state = currentKeyGamepadList.GetArrayElementAtIndex (b);
 					SerializedProperty currentKey = currentKeyGamepadList.GetArrayElementAtIndex (b).FindPropertyRelative ("keyData");
 
 					//check if global vars
@@ -371,21 +403,6 @@ public class MultiInputEditor : Editor {
 						}
 					}
 
-					while (state.FindPropertyRelative ("controllerVariables").arraySize != 14) {
-						if (state.FindPropertyRelative ("controllerVariables").arraySize < 14) {
-							state.FindPropertyRelative ("controllerVariables").InsertArrayElementAtIndex (state.FindPropertyRelative ("controllerVariables").arraySize);
-						} else if (state.FindPropertyRelative ("controllerVariables").arraySize > 14) {
-							state.FindPropertyRelative ("controllerVariables").DeleteArrayElementAtIndex (state.FindPropertyRelative ("controllerVariables").arraySize);
-						}
-					}
-
-					while (state.FindPropertyRelative ("selectedVariables").arraySize != 14) {
-						if (state.FindPropertyRelative ("selectedVariables").arraySize < 14) {
-							state.FindPropertyRelative ("selectedVariables").InsertArrayElementAtIndex (state.FindPropertyRelative ("selectedVariables").arraySize);
-						} else if (state.FindPropertyRelative ("selectedVariables").arraySize > 14) {
-							state.FindPropertyRelative ("selectedVariables").DeleteArrayElementAtIndex (state.FindPropertyRelative ("selectedVariables").arraySize);
-						}
-					}
 
 					displayControllerInput (state);
 
@@ -415,6 +432,10 @@ public class MultiInputEditor : Editor {
 					serializedObject.ApplyModifiedProperties ();
 				}
 
+				GUILayout.EndVertical ();
+				GUILayout.EndVertical ();
+				GUILayout.EndVertical ();
+
 
 			} else {
 				
@@ -429,6 +450,8 @@ public class MultiInputEditor : Editor {
 				GUILayout.EndHorizontal ();
 				GUILayout.Space (10);
 			}
+
+			GUILayout.EndVertical ();
 		}
 			
 		GUILayout.EndVertical();
@@ -438,7 +461,16 @@ public class MultiInputEditor : Editor {
 
 	void displayControllerInput(SerializedProperty state) {
 		SerializedProperty selectedVars = state.FindPropertyRelative ("selectedVariables");
+		SerializedProperty varLocation = state.FindPropertyRelative ("keyData").FindPropertyRelative ("data").FindPropertyRelative ("state").FindPropertyRelative ("controllerVariables");
 
+		//make sure arrays are correct size
+		while (varLocation.arraySize < 18) {
+			varLocation.InsertArrayElementAtIndex (varLocation.arraySize);
+		}
+
+		while (selectedVars.arraySize < 18) {
+			selectedVars.InsertArrayElementAtIndex (selectedVars.arraySize);
+		}
 
 		EditorGUILayout.BeginVertical (EditorStyles.helpBox);
 
@@ -446,13 +478,13 @@ public class MultiInputEditor : Editor {
 			if (GUILayout.Button ("Close Main Buttons")) {
 				state.FindPropertyRelative ("displayMainButtons").boolValue = false;
 			}
-			labelWithProperty ("Xbox A", 140, state.FindPropertyRelative ("a"), selectedVars.GetArrayElementAtIndex (0), true, true, 2);
+			labelWithProperty ("Xbox A", 140, varLocation.GetArrayElementAtIndex(0), selectedVars.GetArrayElementAtIndex (0), true, true, 2);
 
-			labelWithProperty ("Xbox X", 140, state.FindPropertyRelative ("x"), selectedVars.GetArrayElementAtIndex (1), true, true, 2);
+			labelWithProperty ("Xbox X", 140, varLocation.GetArrayElementAtIndex(1), selectedVars.GetArrayElementAtIndex (1), true, true, 2);
 
-			labelWithProperty ("Xbox B", 140, state.FindPropertyRelative ("b"), selectedVars.GetArrayElementAtIndex (2), true, true, 2);
+			labelWithProperty ("Xbox B", 140, varLocation.GetArrayElementAtIndex(2), selectedVars.GetArrayElementAtIndex (2), true, true, 2);
 
-			labelWithProperty ("Xbox Y", 140, state.FindPropertyRelative ("y"), selectedVars.GetArrayElementAtIndex (3), true, true, 2);
+			labelWithProperty ("Xbox Y", 140, varLocation.GetArrayElementAtIndex(3), selectedVars.GetArrayElementAtIndex (3), true, true, 2);
 		} else {
 			if (GUILayout.Button ("Display Main Buttons")) {
 				state.FindPropertyRelative ("displayMainButtons").boolValue = true;
@@ -467,22 +499,24 @@ public class MultiInputEditor : Editor {
 			if (GUILayout.Button ("Close Misc Buttons")) {
 				state.FindPropertyRelative ("displayMiscButtons").boolValue = false;
 			}
-			labelWithProperty ("Xbox Guide", 140, state.FindPropertyRelative ("g"), selectedVars.GetArrayElementAtIndex(4), true, true, 2);
+			labelWithProperty ("Xbox Guide", 140, varLocation.GetArrayElementAtIndex (4), selectedVars.GetArrayElementAtIndex (4), true, true, 2);
 
-			labelWithProperty ("Xbox Start", 140, state.FindPropertyRelative ("s"), selectedVars.GetArrayElementAtIndex(5), true, true, 2);
+			labelWithProperty ("Xbox Start", 140, varLocation.GetArrayElementAtIndex (5), selectedVars.GetArrayElementAtIndex (5), true, true, 2);
 
-			labelWithProperty ("Xbox Right Stick", 140, state.FindPropertyRelative ("rs"), selectedVars.GetArrayElementAtIndex(6), true, true, 2);
+			labelWithProperty ("Xbox Right Stick", 140, varLocation.GetArrayElementAtIndex (6), selectedVars.GetArrayElementAtIndex (6), true, true, 2);
 
-			labelWithProperty ("Xbox Right Shoulder", 140, state.FindPropertyRelative ("rsh"), selectedVars.GetArrayElementAtIndex(7), true, true, 2);
+			labelWithProperty ("Xbox Right Shoulder", 140, varLocation.GetArrayElementAtIndex (7), selectedVars.GetArrayElementAtIndex (7), true, true, 2);
 
-			labelWithProperty ("Xbox Left Stick", 140, state.FindPropertyRelative ("ls"), selectedVars.GetArrayElementAtIndex(8), true, true, 2);
+			labelWithProperty ("Xbox Left Stick", 140, varLocation.GetArrayElementAtIndex (8), selectedVars.GetArrayElementAtIndex (8), true, true, 2);
 
-			labelWithProperty ("Xbox Left Shoulder", 140, state.FindPropertyRelative ("lsh"), selectedVars.GetArrayElementAtIndex(9), true, true, 2);
+			labelWithProperty ("Xbox Left Shoulder", 140, varLocation.GetArrayElementAtIndex (9), selectedVars.GetArrayElementAtIndex (9), true, true, 2);
+
 		} else {
 			if (GUILayout.Button ("Display Misc Buttons")) {
 				state.FindPropertyRelative ("displayMiscButtons").boolValue = true;
 			}
 		}
+
 
 		EditorGUILayout.EndVertical ();
 		GUILayout.Space (2);
@@ -492,13 +526,13 @@ public class MultiInputEditor : Editor {
 			if (GUILayout.Button ("Close Dpad Buttons")) {
 				state.FindPropertyRelative ("displayDpadButtons").boolValue = false;
 			}
-			labelWithProperty ("Xbox Dpad Up", 140, state.FindPropertyRelative ("dpu"), selectedVars.GetArrayElementAtIndex(10), true, true, 2);
+			labelWithProperty ("Xbox Dpad Up", 140, varLocation.GetArrayElementAtIndex(10), selectedVars.GetArrayElementAtIndex (10), true, true, 2);
 
-			labelWithProperty ("Xbox Dpad Down", 140, state.FindPropertyRelative ("dpd"), selectedVars.GetArrayElementAtIndex(11), true, true, 2);
+			labelWithProperty ("Xbox Dpad Down", 140, varLocation.GetArrayElementAtIndex(11), selectedVars.GetArrayElementAtIndex (11), true, true, 2);
 
-			labelWithProperty ("Xbox Dpad Left", 140, state.FindPropertyRelative ("dpl"), selectedVars.GetArrayElementAtIndex(12), true, true, 2);
-
-			labelWithProperty ("Xbox Dpad Right", 140, state.FindPropertyRelative ("dpr"), selectedVars.GetArrayElementAtIndex(13), true, true, 2);
+			labelWithProperty ("Xbox Dpad Left", 140, varLocation.GetArrayElementAtIndex(12), selectedVars.GetArrayElementAtIndex (12), true, true, 2);
+				
+			labelWithProperty ("Xbox Dpad Right", 140, varLocation.GetArrayElementAtIndex(13), selectedVars.GetArrayElementAtIndex (13), true, true, 2);
 		} else {
 			if (GUILayout.Button ("Display Dpad Buttons")) {
 				state.FindPropertyRelative ("displayDpadButtons").boolValue = true;
@@ -513,13 +547,14 @@ public class MultiInputEditor : Editor {
 			if (GUILayout.Button ("Close Changing Buttons")) {
 				state.FindPropertyRelative ("displayVariable").boolValue = false;
 			}
-			labelWithProperty ("Xbox Left Stick Axis", 140, state.FindPropertyRelative ("tsl"), true, true, 2);
+			labelWithProperty ("Xbox Left Stick Axis", 140, varLocation.GetArrayElementAtIndex (14), selectedVars.GetArrayElementAtIndex (14), true, true, 2);
 
-			labelWithProperty ("Xbox Right Stick Axis", 140, state.FindPropertyRelative ("tsr"), true, true, 2);
+			labelWithProperty ("Xbox Right Stick Axis", 140, varLocation.GetArrayElementAtIndex (15), selectedVars.GetArrayElementAtIndex (15), true, true, 2);
 
-			labelWithProperty ("Xbox Trigger Left", 140, state.FindPropertyRelative ("tl"), true, true, 2);
+			labelWithProperty ("Xbox Trigger Left", 140, varLocation.GetArrayElementAtIndex (16), selectedVars.GetArrayElementAtIndex (16), true, true, 2);
 
-			labelWithProperty ("Xbox Trigger Right", 140, state.FindPropertyRelative ("tr"), true, true, 2);
+			labelWithProperty ("Xbox Trigger Right", 140, varLocation.GetArrayElementAtIndex (17), selectedVars.GetArrayElementAtIndex (17), true, true, 2);
+
 		} else {
 			if (GUILayout.Button ("Display Changing Buttons")) {
 				state.FindPropertyRelative ("displayVariable").boolValue = true;

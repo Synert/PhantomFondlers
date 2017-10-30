@@ -13,59 +13,100 @@ public class MultiInput : MonoBehaviour {
 	[SerializeField]
 	public List<bool> visible = new List<bool>();
 
+	ControllerPoll conPoll;
+
+	void Start() {
+		conPoll = GameObject.FindObjectOfType<ControllerPoll> ();
+	}
+
 	void Update() {
 		foreach (keyInfo key in keys) {
+			int currentKeyActivations = 0;
 			for (int a = 0; a < key.keypad.Count; a++) {
-				//GamePadState temp = GamePad.GetState (key.keypad [a].controller);
-				GamePadState temp = key.keypad[a].keyData.data.state.UpdateKeys(key.keypad[a].controller);
-				if (temp.IsConnected) {
-					//do controller stuff
-					if (key.keypad [a].keyData.data.state.pollKeys ()) {
-						activate (key, 2, a);
+				//grab current controller data
+				controllerInputData conData = conPoll.ControllerData [(int)key.keypad[a].controller].conData;
+				key.keypad [a].keyData.data.state = conData;
+				for (int b = 0; b < key.keypad [a].selectedVariables.Length; b++) {
+					if (currentKeyActivations < key.inputsAccepted) {
+						if (key.keypad [a].selectedVariables [b] != button.none) {
+							if (key.keypad [a].selectedVariables [b] == conData.controllerVariables [b]) {
+								
+								currentKeyActivations++;
+								activate (key, 2, a);
+
+							} else if (key.keypad [a].selectedVariables [b] == button.anyDown &&
+							          (conData.controllerVariables [b] == button.pressed ||
+							          conData.controllerVariables [b] == button.pressedFirstUpdate)) {
+
+								currentKeyActivations++;
+								activate (key, 2, a);
+
+							} else if (key.keypad [a].selectedVariables [b] == button.anyUp &&
+							          (conData.controllerVariables [b] == button.released ||
+							          conData.controllerVariables [b] == button.releasedFirstUpdate)) {
+
+								currentKeyActivations++;
+								activate (key, 2, a);
+
+							} else if (key.keypad [a].selectedVariables [b] == button.any) {
+
+								currentKeyActivations++;
+								activate (key, 2, a);
+
+							}
+						}
 					}
+
 				}
 			}
 			for (int a = 0; a < key.axis.Count; a++) {
 				//do axis stuff here
-				if (!key.axis [a].multiAxis) {
-					//poll axis and test deadzone
-					key.axis [a].keyData.data.axisValue = Input.GetAxisRaw (key.axis [a].axis);
-					if (key.axis [a].keyData.data.axisValue < key.axis [a].axisDeadZone.y &&
-						key.axis [a].keyData.data.axisValue > key.axis [a].axisDeadZone.x) {
-						key.axis [a].keyData.data.axisValue = 0;
-					}
+				if (!key.axis [a].dualAxis) {
 
-					//activate if above is not 0
-					if (key.axis [a].keyData.data.axisValue != 0) {
-						activate (key, 0, a);
+					if (currentKeyActivations < key.inputsAccepted) {
+						//poll axis and test deadzone
+						key.axis [a].keyData.data.axisValue = Input.GetAxisRaw (key.axis [a].axis);
+						if (key.axis [a].keyData.data.axisValue < key.axis [a].axisDeadZone) {
+							key.axis [a].keyData.data.axisValue = 0;
+						}
+
+						//activate if above is not 0
+						if (key.axis [a].keyData.data.axisValue != 0) {
+							currentKeyActivations++;
+							activate (key, 0, a);
+						}
+
 					}
 				} else {
-					//poll axis 1 and test deadzone
-					key.axis [a].keyData.data.multiAxisValue.x = Input.GetAxisRaw (key.axis [a].axis);
-					if (key.axis [a].keyData.data.multiAxisValue.x < key.axis [a].axisDeadZone.y &&
-						key.axis [a].keyData.data.multiAxisValue.x > key.axis [a].axisDeadZone.x) {
-						key.axis [a].keyData.data.multiAxisValue.x = 0;
-					}
+					if (currentKeyActivations < key.inputsAccepted) {
 
-					//poll axis 2 and test deadzone
-					key.axis [a].keyData.data.multiAxisValue.y = Input.GetAxisRaw (key.axis [a].axis2);
-					if (key.axis [a].keyData.data.multiAxisValue.y < key.axis [a].axis2DeadZone.y &&
-						key.axis [a].keyData.data.multiAxisValue.y > key.axis [a].axis2DeadZone.x) {
-						key.axis [a].keyData.data.multiAxisValue.y = 0;
-					}
+						//poll axis and test deadzone
+						key.axis [a].keyData.data.multiAxisValue.x = Input.GetAxisRaw (key.axis [a].axis);
+						key.axis [a].keyData.data.multiAxisValue.y = Input.GetAxisRaw (key.axis [a].axis2);
+						if (key.axis [a].keyData.data.multiAxisValue.magnitude < key.axis [a].axis2DeadZone) {
+							key.axis [a].keyData.data.multiAxisValue = Vector2.zero;
+						}
 
-					//activate if either above is not 0
-					if (key.axis [a].keyData.data.multiAxisValue != Vector2.zero) {
-						activate (key, 0, a);
+						//activate if either above is not 0
+						if (key.axis [a].keyData.data.multiAxisValue != Vector2.zero) {
+							currentKeyActivations++;
+							activate (key, 0, a);
+						}
 					}
 				}
-			}
+			} //loop through all key buttons lists
 			for (int a = 0; a < key.buttons.Count; a++) {
-				//do button stuff here
-				if ((Input.GetKey (key.buttons[a].button) && key.buttons[a].keyType == keyInputType.getKey) ||
-					(Input.GetKeyDown (key.buttons[a].button) && key.buttons[a].keyType == keyInputType.getKeyDown) ||
-					(Input.GetKeyUp (key.buttons[a].button) && key.buttons[a].keyType == keyInputType.getKeyUp)) {
-					activate(key, 1, a);
+				//loop through all button list
+				for (int b = 0; b < key.buttons [a].button.Count; b++) {
+					//do button stuff here
+					if (currentKeyActivations < key.inputsAccepted) {
+						if ((Input.GetKey (key.buttons [a].button [b]) && key.buttons [a].keyType [b] == keyInputType.getKey) ||
+						   (Input.GetKeyDown (key.buttons [a].button [b]) && key.buttons [a].keyType [b] == keyInputType.getKeyDown) ||
+							(Input.GetKeyUp (key.buttons [a].button [b]) && key.buttons [a].keyType [b] == keyInputType.getKeyUp)) {
+							currentKeyActivations++;
+							activate (key, 1, a);
+						}
+					}
 				}
 			}
 		}
@@ -81,7 +122,7 @@ public class MultiInput : MonoBehaviour {
 		} else {
 			key = _key.keypad [index].keyData;
 		}
-
+			
 		//check if key has a set function
 		if (key.function) {
 			//check if the key has an object
@@ -119,28 +160,7 @@ public class MultiInput : MonoBehaviour {
 			info.SendMessage (name, variable);
 		}
 	}
-
-	void testKeyboardInputs() {
-		if (Input.anyKey) {
-			Debug.Log (Input.inputString);
-		}
-	}
-
-	void testControllerInputs() {
-		for (int a = 0; a < 8; a++) {
-			for(int b = 0; b < 19; b++) {
-				if (a == 0) {
-					if (Input.GetKey ((KeyCode)System.Enum.Parse (typeof(KeyCode), "JoystickButton" + b))) {
-						Debug.Log ("Joystick 0 Button " + b);
-					}
-				} else {
-					if (Input.GetKey ((KeyCode)System.Enum.Parse (typeof(KeyCode), ("Joystick" + a + "Button" + b)))) {
-						Debug.Log ("Joystick " + a + " Button " + b);
-					}
-				}
-			}
-		}
-	}
+		
 }
 
 //default class for key input data
@@ -148,7 +168,7 @@ public class MultiInput : MonoBehaviour {
 public class keyInfo
 {
 	//basic variables for input names should explain it
-	public int keyInputsAccepted;
+	public int inputsAccepted = 1;
 
 	public bool globalFunction;
 	public bool globalFunctionObj;
@@ -167,25 +187,29 @@ public class keyInfo
 [System.Serializable]
 public class axisInfo {
 	public string axis;
-	public bool advancedDeadZone;
-	public Vector2 axisDeadZone;
+	public float axisDeadZone;
 	public string axis2;
-	public Vector2 axis2DeadZone;
-	public bool multiAxis;
+	public float axis2DeadZone;
+	public bool dualAxis;
 	public basicKeyInfo keyData;
 }
 
 [System.Serializable]
 public class buttonInfo {
-	public KeyCode button;
+	public List<KeyCode> button;
+	public List<keyInputType> keyType;
 	public basicKeyInfo keyData;
-	public keyInputType keyType;
 }
 
 [System.Serializable]
 public class controllerInfo {
+	public button[] selectedVariables = new button[18];
 	public PlayerIndex controller;
 	public basicKeyInfo keyData;
+	public bool displayMainButtons;
+	public bool displayMiscButtons;
+	public bool displayDpadButtons;
+	public bool displayVariable;
 }
 
 [System.Serializable]
@@ -212,7 +236,7 @@ public class variableData {
 	public Vector2 multiAxisValue;
 
 	//gamepad data
-	public controllerButtonData state;
+	public controllerInputData state;
 
 	//all data types needed
 	public bool b;
@@ -235,147 +259,6 @@ public enum keyInputType {
 }
 
 [System.Serializable]
-public class controllerButtonData {
-	//default data
-	public button[] controllerVariables;
-	public button[] selectedVariables;
-	public bool displayMainButtons;
-	public bool a;
-	public bool x;
-	public bool b;
-	public bool y;
-
-	public bool displayMiscButtons;
-	public bool g;
-	public bool s;
-	public bool rs;
-	public bool rsh;
-	public bool ls;
-	public bool lsh;
-
-	public bool displayDpadButtons;
-	public bool dpu;
-	public bool dpd;
-	public bool dpl;
-	public bool dpr;
-
-	public bool displayVariable;
-	public inputsData ThumbStickLeft;
-	public bool tsl;
-	public inputsData ThumbStickRight;
-	public bool tsr;
-
-	public inputData TriggerLeft;
-	public bool tl;
-	public inputData TriggerRight;
-	public bool tr;
-
-	public GamePadState previousState;
-	public GamePadState state;
-
-	//functions
-	public bool pollKeys () {
-		for (int a = 0; a < controllerVariables.Length; a++) {
-			if (controllerVariables [a] != button.none) {
-				if (controllerVariables [a] == selectedVariables [a]) {
-					return true;
-				}
-			}
-		}
-		if (ThumbStickLeft.inputs != Vector2.zero && tsl) {
-			return true;
-		}
-		if (ThumbStickRight.inputs != Vector2.zero && tsr) {
-			return true;
-		}
-		if (TriggerLeft.input != 0 && tl) {
-			return true;
-		}
-		if (TriggerRight.input != 0 && tr) {
-			return true;
-		}
-		return false;
-	}
-	public GamePadState UpdateKeys(PlayerIndex _index) {
-		state = GamePad.GetState (_index);
-		if (state.IsConnected) {
-			if (a) {
-				testButton (state.Buttons.A, previousState.Buttons.A, out controllerVariables[0]);
-			}
-			if (b) {
-				testButton (state.Buttons.B, previousState.Buttons.B, out controllerVariables[1]);
-			}
-			if (x) {
-				testButton (state.Buttons.X, previousState.Buttons.X, out controllerVariables[2]);
-			}
-			if (y) {
-				testButton (state.Buttons.Y, previousState.Buttons.Y, out controllerVariables[3]);
-			}
-			if (g) {
-				testButton (state.Buttons.Guide, previousState.Buttons.Guide, out controllerVariables[4]);
-			}
-			if (s) {
-				testButton (state.Buttons.Start, previousState.Buttons.Start, out controllerVariables[5]);
-			}
-			if (rs) {
-				testButton (state.Buttons.RightStick, previousState.Buttons.RightStick, out controllerVariables[6]);
-			}
-			if (rsh) {
-				testButton (state.Buttons.RightShoulder, previousState.Buttons.RightShoulder, out controllerVariables[7]);
-			}
-			if (ls) {
-				testButton (state.Buttons.LeftStick, previousState.Buttons.LeftStick, out controllerVariables[8]);
-			}
-			if (lsh) {
-				testButton (state.Buttons.LeftShoulder, previousState.Buttons.LeftShoulder, out controllerVariables[9]);
-			}
-			if (dpu) {
-				testButton (state.DPad.Up, previousState.DPad.Up, out controllerVariables[10]);
-			}
-			if (dpd) {
-				testButton (state.DPad.Down, previousState.DPad.Down, out controllerVariables[11]);
-			}
-			if (dpl) {
-				testButton (state.DPad.Left, previousState.DPad.Left, out controllerVariables[12]);
-			}
-			if (dpr) {
-				testButton (state.DPad.Right, previousState.DPad.Right, out controllerVariables[13]);
-			}
-			if (tsl) {
-				ThumbStickLeft.inputs = new Vector2 (state.ThumbSticks.Left.X, state.ThumbSticks.Left.Y);
-			}
-			if (tsr) {
-				ThumbStickRight.inputs = new Vector2 (state.ThumbSticks.Right.X, state.ThumbSticks.Right.Y);
-			}
-			if (tl) {
-				TriggerLeft.input = state.Triggers.Left;
-			}
-			if (tr) {
-				TriggerRight.input = state.Triggers.Right;
-			}
-		}
-		previousState = state;
-		return state;
-	}
-
-	void testButton(ButtonState testAgainst, ButtonState prevTestAgainst, out button valueSet) {
-		if (testAgainst == ButtonState.Pressed) {
-			if (prevTestAgainst == ButtonState.Released) {
-				valueSet = button.pressedFirstUpdate;
-			} else {
-				valueSet = button.pressed;
-			}
-		} else {
-			if (prevTestAgainst == ButtonState.Pressed) {
-				valueSet = button.releasedFirstUpdate;
-			} else {
-				valueSet = button.released;
-			}
-		}
-	}
-}
-
-[System.Serializable]
 public class inputData {
 	public float input;
 }
@@ -391,5 +274,8 @@ public enum button {
 	released,
 	pressed,
 	pressedFirstUpdate,
-	releasedFirstUpdate
+	releasedFirstUpdate,
+	anyDown,
+	anyUp,
+	any
 }
