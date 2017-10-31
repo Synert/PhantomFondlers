@@ -18,6 +18,7 @@ public class PlayerController : MonoBehaviour
     //===== Data for Animation ====//
     Animator anim;
     private bool facingRight;
+    public Vector2 originalSize;
     //=============================
 
     public bool rotateAroundObject = true;
@@ -70,8 +71,10 @@ public class PlayerController : MonoBehaviour
         facingRight = true;
         anim = GetComponent<Animator>();
         rend = GetComponent<Renderer>();
-		
 
+        originalSize = GetComponent<Collider2D>().bounds.size;
+        Vector2 temp = GetComponent<SpriteRenderer>().bounds.size;
+        GetComponent<Collider2D>().bounds.size.Set(temp.x, temp.y, 0);
     }
 
 	//==============================================
@@ -82,9 +85,14 @@ public class PlayerController : MonoBehaviour
             arbitaryHealth -= damage;
 			if (arbitaryHealth <= 0)
             {
-               //GetComponent<BoxCollider2D>().isTrigger = true;
-               GetComponent<Rigidbody2D>().mass = 100;
+                stat = status.death;
+                anim.Play("death", 0);
+                animNeedsFinish = getAnimationTime("death");
+                //GetComponent<BoxCollider2D>().isTrigger = true;
+                GetComponent<Rigidbody2D>().mass = 100;
                 movementPause = true;
+                Vector2 temp = GetComponent<SpriteRenderer>().bounds.size;
+                GetComponent<Collider2D>().bounds.size.Set(temp.x, temp.y, 0);
                 playSound(3);
 			} else
             {
@@ -521,7 +529,10 @@ public class PlayerController : MonoBehaviour
 
 	void Update ()
 	{
-		leftWall = onLeftWall ();
+
+        Vector2 temp = GetComponent<SpriteRenderer>().bounds.size;
+        GetComponent<Collider2D>().bounds.size.Set(temp.x, temp.y, 0);
+        leftWall = onLeftWall ();
 		rightWall = onRightWall ();
 		isOnGround = onGround();
 		bool isDashing = invincibility.pollIsDodging ();
@@ -548,7 +559,9 @@ public class PlayerController : MonoBehaviour
 			if (!isOnGround) {
 				if (leftWall || rightWall) {
 					stat = status.slidingOnWall;
-				} else {
+				}
+                else if (stat != status.death)
+                {
 					stat = status.falling;
 				}
 			}
@@ -557,14 +570,19 @@ public class PlayerController : MonoBehaviour
 		if (stat == status.slidingOnWall) {
 			//activate sliding anim
 			anim.Play ("wallToRightWallSlide" , 0);
-			//anim.SetInteger("State", 5);
-			stat = status.slidingOnWall;
+            //anim.SetInteger("State", 5);
+            stat = status.slidingOnWall;
 		} else if (stat == status.falling) {
 			//activate falling anim
 			anim.Play ("Falling" , 0);
 			//anim.SetInteger("State", 3);
 			stat = status.falling;
-		}
+		} else if(stat == status.death)
+        {
+            anim.Play("death", 0);
+            stat = status.death;
+        }
+        
 
 		if (isOnGround) {
 			if (GetComponent<Rigidbody2D> ().velocity.y <= 0) {
@@ -579,7 +597,7 @@ public class PlayerController : MonoBehaviour
 			}
 		}
 
-		if (horizontal == false && isOnGround && !isDashing)
+		if (horizontal == false && isOnGround && !isDashing && stat != status.death)
 		{
 			//idle
 			if (Mathf.Abs(GetComponent<Rigidbody2D> ().velocity.x) < 0.2f || stat == status.falling) {
@@ -723,7 +741,8 @@ public class PlayerController : MonoBehaviour
 
 }
 
-public enum status {
+public enum status
+{
 	stationary,
 	walking,
 	running,
