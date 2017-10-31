@@ -7,6 +7,7 @@ using UnityEngine.SceneManagement;
 public class PlayerController : MonoBehaviour
 {
     public Invincibility invincibility;
+    public PlayerAttacks m_attack;
     public Renderer rend = new Renderer();
     public float MaxSpeed = 6;
     public float Acceleration = 5;
@@ -610,7 +611,16 @@ public class PlayerController : MonoBehaviour
 		horizontal = false;
 		keyPressDown = false;
 		canJumpVariable = false;
-	}
+
+        if (stat == status.dodging || stat == status.slidingOnWall || stat == status.wallJump || stat == status.dashing)
+        {
+            m_attack.SetAttackEnabled(false);
+        }
+        else
+        {
+            m_attack.SetAttackEnabled(true);
+        }
+    }
 
     private bool onGround()
     {

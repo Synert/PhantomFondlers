@@ -18,13 +18,16 @@ public class Duster : WeaponPickup {
         }
         else
         {
-            GetComponentsInChildren<BoxCollider2D>()[1].enabled = false;
+           GetComponentsInChildren<BoxCollider2D>()[1].enabled = false;
             GetComponentInChildren<Animator>().Play("FeatherDusterIdle", 0);
         }
     }
 
     public override void Attack(float power)
     {
+        base.Attack(power);
+
+        GetComponentsInChildren<BoxCollider2D>()[1].enabled = true;
         attackAnimTime = 400.0f;
         //GetComponentInChildren<ParticleSystem>().Clear();
         GetComponentInChildren<ParticleSystem>().Stop();
@@ -36,6 +39,8 @@ public class Duster : WeaponPickup {
 
     public override void Charge(float power)
     {
+        base.Charge(power);
+
         GetComponentInChildren<ParticleSystem>().enableEmission = true;
         if(!GetComponentInChildren<ParticleSystem>().isPlaying)
         {

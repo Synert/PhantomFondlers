@@ -65,6 +65,7 @@ public class PlayerAttacks : MonoBehaviour
             else
             {
                 m_duster.gameObject.SetActive(false);
+                m_weapon.gameObject.SetActive(true);
             }
 
             Input(Mathf.Atan2(inputs.x, inputs.y) * Mathf.Rad2Deg);
@@ -77,6 +78,9 @@ public class PlayerAttacks : MonoBehaviour
                 m_weapon.gameObject.SetActive(false);
             }
             m_duster.gameObject.SetActive(false);
+            attacking = false;
+            power = 0.0f;
+            quadSet = false;
         }
     }
 
@@ -88,6 +92,10 @@ public class PlayerAttacks : MonoBehaviour
             if (m_weapon != null && !m_weapon.GetComponentInChildren<WeaponPickup>().GetAngleLock())
             {
                 m_weapon.eulerAngles = new Vector3(m_weapon.eulerAngles.x, m_weapon.eulerAngles.y, -angle);
+            }
+            else if (m_duster != null && !m_duster.GetComponentInChildren<WeaponPickup>().GetAngleLock())
+            {
+                m_duster.eulerAngles = new Vector3(m_duster.eulerAngles.x, m_duster.eulerAngles.y, -angle);
             }
         }
 

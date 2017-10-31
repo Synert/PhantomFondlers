@@ -2,7 +2,8 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class ExampleSword : WeaponPickup {
+public class PillowCannon : WeaponPickup
+{
 
     public override void Attack(float power)
     {
@@ -10,6 +11,8 @@ public class ExampleSword : WeaponPickup {
         newProjectile.GetComponent<Projectile>().SetOwner(GetOwner());
         newProjectile.GetComponent<Projectile>().SetWeapon(gameObject);
         newProjectile.GetComponent<Projectile>().SetDamage(damage);
+
+        Destroy(gameObject);
     }
 
     public override void Charge(float power)

@@ -14,6 +14,7 @@ public class WeaponPickup : MonoBehaviour
     GameObject owner;
     bool held = false;
     public float powerCap;
+    bool doneDamage = false;
 
     public enum DIRECTION
     {
@@ -79,16 +80,21 @@ public class WeaponPickup : MonoBehaviour
             }
         }
         //held, so it's an attack
-        else if(held && GetOwner() != null)
+        else if(held && !doneDamage)
         {
-            if (col.tag == "Player")
+            Debug.Log("Trying to attack");
+            Debug.Log(col.tag);
+            Debug.Log(col.name);
+            if (col.gameObject.tag == "Player")
             {
+                Debug.Log("Player detected");
                 PlayerController player = col.GetComponentInChildren<PlayerController>();
 
                 if (GetOwner().GetComponentInChildren<PlayerController>() != player)
                 {
                     player.takeDamage(damage);
                     Debug.Log("aaa");
+                    doneDamage = true;
                 }
             }
         }
@@ -135,7 +141,7 @@ public class WeaponPickup : MonoBehaviour
 
     public virtual void Attack(float power)
     {
-
+        doneDamage = false;
     }
 
     public virtual void Charge(float power)
