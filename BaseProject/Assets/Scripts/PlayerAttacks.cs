@@ -76,6 +76,7 @@ public class PlayerAttacks : MonoBehaviour
         {
             if (!attacking)
             {
+                GetComponent<PlayerController>().playSound(5);
                 attacking = true;
              
             }

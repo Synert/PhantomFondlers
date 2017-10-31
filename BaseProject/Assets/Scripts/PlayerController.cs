@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Audio;
+using UnityEngine.SceneManagement;
 
 public class PlayerController : MonoBehaviour
 {
@@ -386,8 +387,9 @@ public class PlayerController : MonoBehaviour
 
     }
 
-    public void playSound(int _clip, float defaultVal = 1)
+    public void playSound(int _clip, float defaultVal = 1, float defaultSound = 0.1f)
     {
+        GetComponent<AudioSource>().volume = defaultSound;
         GetComponent<AudioSource>().pitch = defaultVal;
        GetComponent<AudioSource>().clip = AudioClip[_clip];
         GetComponent<AudioSource>().Play();
