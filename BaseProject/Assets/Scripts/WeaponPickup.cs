@@ -133,92 +133,14 @@ public class WeaponPickup : MonoBehaviour
         return (DIRECTION)quad;
     }
 
-    //attack a direction, for angle locked
-    public virtual void AttackDirection(int quad, float power)
+    public virtual void Attack(float power)
     {
-        Quaternion orig = transform.rotation;
-        transform.rotation = Quaternion.identity;
-        switch (GetDirection(quad))
-        {
-            case DIRECTION.UP:
-                //
-                break;
-            case DIRECTION.UP_RIGHT:
-                //
-                break;
-            case DIRECTION.RIGHT:
-                //
-                break;
-            case DIRECTION.DOWN_RIGHT:
-                //
-                break;
-            case DIRECTION.DOWN:
-                //
-                break;
-            case DIRECTION.DOWN_LEFT:
-                //
-                break;
-            case DIRECTION.LEFT:
-                //
-                break;
-            case DIRECTION.UP_LEFT:
-                //
-                break;
-        }
-        transform.rotation = orig;
+
     }
 
-    //attack any angle, used mainly for ranged weapons
-    public virtual void AttackAngle(float angle, float power)
+    public virtual void Charge(float power)
     {
-        Quaternion orig = transform.rotation;
-        transform.rotation = Quaternion.identity;
-        Debug.DrawLine(transform.position, transform.position + Quaternion.AngleAxis(angle, Vector3.forward) * transform.right * 2.0f, Color.red, 1.0f);
-        transform.rotation = orig;
-    }
 
-    //charge an attack in direction
-    public virtual void ChargeDirection(int quad, float power)
-    {
-        Quaternion orig = transform.rotation;
-        transform.rotation = Quaternion.identity;
-        switch (GetDirection(quad))
-        {
-            case DIRECTION.UP:
-                //
-                break;
-            case DIRECTION.UP_RIGHT:
-                //
-                break;
-            case DIRECTION.RIGHT:
-                //
-                break;
-            case DIRECTION.DOWN_RIGHT:
-                //
-                break;
-            case DIRECTION.DOWN:
-                //
-                break;
-            case DIRECTION.DOWN_LEFT:
-                //
-                break;
-            case DIRECTION.LEFT:
-                //
-                break;
-            case DIRECTION.UP_LEFT:
-                //
-                break;
-        }
-        transform.rotation = orig;
-    }
-
-    //charge an attack at angle
-    public virtual void ChargeAngle(float angle, float power)
-    {
-        Quaternion orig = transform.rotation;
-        transform.rotation = Quaternion.identity;
-        Debug.DrawLine(transform.position, transform.position + Quaternion.AngleAxis(angle, Vector3.forward) * transform.right * 2.0f, Color.green, 1.0f);
-        transform.rotation = orig;
     }
 
     public void SetOwner(GameObject set)

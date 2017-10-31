@@ -13,6 +13,7 @@ public class PlayerAttacks : MonoBehaviour
     bool quadSet = false;
     bool resetAttack = false;
     float size = 45f;
+    bool canAttack = true;
 
     float power = 0.0f;
     Vector2 inputs;
@@ -54,22 +55,35 @@ public class PlayerAttacks : MonoBehaviour
             cooldown -= 1000.0f * Time.deltaTime;
         }
 
-        if (m_weapon == null)
+        if (canAttack)
         {
-            m_duster.gameObject.SetActive(true);
-        }
-        else
-        {
-            m_duster.gameObject.SetActive(false);
+
+            if (m_weapon == null)
+            {
+                m_duster.gameObject.SetActive(true);
+            }
+            else
+            {
+                m_duster.gameObject.SetActive(false);
+            }
+
+            Input(Mathf.Atan2(inputs.x, inputs.y) * Mathf.Rad2Deg);
         }
 
-        Input(Mathf.Atan2(inputs.x, inputs.y) * Mathf.Rad2Deg);
+        else
+        {
+            if(m_weapon != null)
+            {
+                m_weapon.gameObject.SetActive(false);
+            }
+            m_duster.gameObject.SetActive(false);
+        }
     }
 
     void Input(float angle)
     {
 
-        if (inputs.magnitude > 0.75f)
+        if (inputs.magnitude > 0.3f)
         {
             if (m_weapon != null && !m_weapon.GetComponentInChildren<WeaponPickup>().GetAngleLock())
             {
@@ -117,20 +131,26 @@ public class PlayerAttacks : MonoBehaviour
                 if (!m_weapon.GetComponentInChildren<WeaponPickup>().GetAngleLock())
                 {
                     m_weapon.eulerAngles = new Vector3(m_weapon.eulerAngles.x, m_weapon.eulerAngles.y, -angle);
-                    m_weapon.GetComponentInChildren<WeaponPickup>().ChargeAngle(90.0f - angle, power);
                 }
                 else
                 {
                     float newAngle = quad * size;
                     m_weapon.eulerAngles = new Vector3(m_weapon.eulerAngles.x, m_weapon.eulerAngles.y, newAngle - 90.0f);
-                    m_weapon.GetComponentInChildren<WeaponPickup>().ChargeDirection(quad, power);
                 }
+                m_weapon.GetComponentInChildren<WeaponPickup>().Charge(power);
             }
             else
             {
-                float newAngle = quad * size;
-                m_duster.eulerAngles = new Vector3(m_duster.eulerAngles.x, m_duster.eulerAngles.y, newAngle - 90.0f);
-                m_duster.GetComponentInChildren<WeaponPickup>().ChargeDirection(quad, power);
+                if (!m_duster.GetComponentInChildren<WeaponPickup>().GetAngleLock())
+                {
+                    m_duster.eulerAngles = new Vector3(m_duster.eulerAngles.x, m_duster.eulerAngles.y, -angle);
+                }
+                else
+                {
+                    float newAngle = quad * size;
+                    m_duster.eulerAngles = new Vector3(m_duster.eulerAngles.x, m_duster.eulerAngles.y, newAngle - 90.0f);
+                }
+                m_duster.GetComponentInChildren<WeaponPickup>().Charge(power);
             }
         }
         else if (attacking)
@@ -153,18 +173,11 @@ public class PlayerAttacks : MonoBehaviour
             float newAngle = quad * size;
             if (m_weapon != null)
             {
-                if (!m_weapon.GetComponentInChildren<WeaponPickup>().GetAngleLock())
-                {
-                    m_weapon.GetComponentInChildren<WeaponPickup>().AttackAngle(90.0f - angle, power);
-                }
-                else
-                {
-                    m_weapon.GetComponentInChildren<WeaponPickup>().AttackDirection(quad, power);
-                }
+                m_weapon.GetComponentInChildren<WeaponPickup>().Attack(power);
             }
             else
             {
-                m_duster.GetComponentInChildren<WeaponPickup>().AttackDirection(quad, power);
+                m_duster.GetComponentInChildren<WeaponPickup>().Attack(power);
             }
 
             power = 0.0f;
@@ -241,5 +254,10 @@ public class PlayerAttacks : MonoBehaviour
         }
 
         return ret;
+    }
+
+    public void SetAttackEnabled(bool set)
+    {
+        canAttack = set;
     }
 }

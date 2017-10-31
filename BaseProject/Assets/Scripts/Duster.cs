@@ -23,83 +23,23 @@ public class Duster : WeaponPickup {
         }
     }
 
-    public override void AttackDirection(int quad, float power)
+    public override void Attack(float power)
     {
         attackAnimTime = 400.0f;
         //GetComponentInChildren<ParticleSystem>().Clear();
         GetComponentInChildren<ParticleSystem>().Stop();
         GetComponentInChildren<ParticleSystem>().enableEmission = false;
-
         GetComponentInChildren<Animator>().Play("FeatherDuster", 0);
-
         GetOwner().GetComponent<Rigidbody2D>().AddForce(transform.up * power * 125.0f);
-
         Debug.Log("Attack power " + power);
-        switch (GetDirection(quad))
-        {
-            case DIRECTION.UP:
-                Debug.Log("Up attack");
-                break;
-            case DIRECTION.UP_RIGHT:
-                //
-                break;
-            case DIRECTION.RIGHT:
-                Debug.Log("Right attack");
-                break;
-            case DIRECTION.DOWN_RIGHT:
-                //
-                break;
-            case DIRECTION.DOWN:
-                Debug.Log("Down attack");
-                break;
-            case DIRECTION.DOWN_LEFT:
-                //
-                break;
-            case DIRECTION.LEFT:
-                Debug.Log("Left attack");
-                break;
-            case DIRECTION.UP_LEFT:
-                //
-                break;
-        }
     }
 
-    public override void ChargeDirection(int quad, float power)
+    public override void Charge(float power)
     {
         GetComponentInChildren<ParticleSystem>().enableEmission = true;
         if(!GetComponentInChildren<ParticleSystem>().isPlaying)
         {
             GetComponentInChildren<ParticleSystem>().Play();
         }
-        Quaternion orig = transform.rotation;
-        transform.rotation = Quaternion.identity;
-        switch (GetDirection(quad))
-        {
-            case DIRECTION.UP:
-                //
-                break;
-            case DIRECTION.UP_RIGHT:
-                //
-                break;
-            case DIRECTION.RIGHT:
-                //
-                break;
-            case DIRECTION.DOWN_RIGHT:
-                //
-                break;
-            case DIRECTION.DOWN:
-                //
-                break;
-            case DIRECTION.DOWN_LEFT:
-                //
-                break;
-            case DIRECTION.LEFT:
-                //
-                break;
-            case DIRECTION.UP_LEFT:
-                //
-                break;
-        }
-        transform.rotation = orig;
     }
 }
