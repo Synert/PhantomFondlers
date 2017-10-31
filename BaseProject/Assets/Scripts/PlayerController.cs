@@ -47,6 +47,10 @@ public class PlayerController : MonoBehaviour
     //====== Data for sprinting ======//
     public float sprintSpeedModifier;
     //=================================
+	//temp
+	public status stat;
+	public float animNeedsFinish = 0;
+	//
 
     bool canDoubleJump = true;
     float jmpDuration;
@@ -59,19 +63,14 @@ public class PlayerController : MonoBehaviour
 
     //Audio
     public AudioClip[] AudioClip;
-
-    //settigns
-    public GameObject SettingsObj;
+   
     
     void Start()
     {
         facingRight = true;
         anim = GetComponent<Animator>();
         rend = GetComponent<Renderer>();
-        SettingsObj = GameObject.Find("PlayerVal").gameObject;
-        GetComponent<PlayerController>().arbitaryHealth = SettingsObj.GetComponent<PlayerValues>().health;
-        GetComponent<PlayerController>().respawnHealth = SettingsObj.GetComponent<PlayerValues>().respawnHealth;
-        GetComponent<PlayerController>().respawnCount = SettingsObj.GetComponent<PlayerValues>().spamCount;
+		
 
     }
 
@@ -179,8 +178,11 @@ public class PlayerController : MonoBehaviour
                     if (GetComponent<Rigidbody2D>().velocity.x > -this.MaxSpeed)
                     {
                         if (isOnGround)
-                        {
-                            anim.SetInteger("State", 1);
+						{
+							anim.StopPlayback ();
+							//anim.SetInteger("State", 2);
+							anim.Play ("WalkingARMS" , 0);
+							stat = status.walking;
                             
                         }
                         GetComponent<SpriteRenderer>().flipX = true;
@@ -193,8 +195,11 @@ public class PlayerController : MonoBehaviour
                     if (GetComponent<Rigidbody2D>().velocity.x < this.MaxSpeed)
                     {
                         if (isOnGround)
-                        {
-                            anim.SetInteger("State", 1);
+						{
+							anim.StopPlayback ();
+							//anim.SetInteger("State", 2);
+							anim.Play ("WalkingARMS" , 0);
+							stat = status.walking;
                             
                         }
                         GetComponent<SpriteRenderer>().flipX = false;
@@ -210,8 +215,11 @@ public class PlayerController : MonoBehaviour
                     if (GetComponent<Rigidbody2D>().velocity.x > -this.MaxSpeed * sprintSpeedModifier)
                     {
                         if (isOnGround)
-                        {
-                            anim.SetInteger("State", 2);
+						{
+							anim.StopPlayback ();
+							//anim.SetInteger("State", 2);
+							anim.Play ("RunningARMS" , 0);
+							stat = status.running;
                             
                         }
                         GetComponent<SpriteRenderer>().flipX = true;
@@ -224,8 +232,11 @@ public class PlayerController : MonoBehaviour
                     if (GetComponent<Rigidbody2D>().velocity.x < this.MaxSpeed * sprintSpeedModifier)
                     {
                         if (isOnGround)
-                        {
-                            anim.SetInteger("State", 2);
+						{
+							anim.StopPlayback ();
+							//anim.SetInteger("State", 2);
+							anim.Play ("RunningARMS" , 0);
+							stat = status.running;
                             
                         }
                         GetComponent<SpriteRenderer>().flipX = false;
@@ -314,7 +325,88 @@ public class PlayerController : MonoBehaviour
 
     // Update is called once per frame
 
-    void jump()
+	void jump() {
+		if (!movementPause) {
+			if (!keyPressDown) {
+
+				keyPressDown = true;
+				if (isOnGround || (canDoubleJump && enableDoubleJump) || (wallHitJump && enableWallJump)) {
+					bool wallHit = false;
+					int wallHitDirection = 0;
+
+					if (leftWall || rightWall) {
+						wallHit = true;
+					}
+
+					if (horizontal) {
+						if (wallHit) {
+							if (enableWallJump) {
+								if (leftWall) {
+									wallHitDirection = 1;
+								} else if (rightWall) {
+									wallHitDirection = -1;
+								}
+							}
+						}
+					}
+
+					if (!wallHit) {
+						if (isOnGround || (canDoubleJump && enableDoubleJump)) {
+							//anim.SetInteger ("State", 3);
+							anim.Play ("StandingJump" , 0);
+							animNeedsFinish = getAnimationTime("StandingJump");
+							if (!isOnGround) {
+								canDoubleJump = false;
+								playSound (0, 0.5f);
+							} else {
+								playSound (0, 1.25f);
+								canDoubleJump = true;
+							}
+							stat = status.standingJump;
+							GetComponent<Rigidbody2D> ().velocity = new Vector2 (GetComponent<Rigidbody2D> ().velocity.x, this.jumpSpeed);
+							jumpDuration = 0.0f;
+						}
+					} else {
+						if (isOnGround) {
+							//anim.SetInteger ("State", 3);
+							anim.Play ("StandingJump" , 0);
+							animNeedsFinish = getAnimationTime("StandingJump");
+							playSound (0, 1.25f);
+							stat = status.standingJump;
+							GetComponent<Rigidbody2D> ().velocity = new Vector2 (GetComponent<Rigidbody2D> ().velocity.x, this.jumpSpeed);
+							jmpDuration = 0.0f;
+							canJumpVariable = true;
+						} else {
+							if (wallHitDirection != 0) {
+								//do wall jump here
+								playSound (0, 0.7f);
+								//anim.SetInteger ("State", 6);
+								anim.Play ("WallJump" , 0);
+								animNeedsFinish = getAnimationTime("WallJump") * 2;
+								stat = status.wallJump;
+								GetComponent<Rigidbody2D> ().velocity = new Vector2 (this.jumpSpeed * wallHitDirection, this.jumpSpeed);
+								jmpDuration = 0.0f;
+								canJumpVariable = true;
+							}
+						}
+
+
+					}
+
+
+				}
+			} else if (canJumpVariable) {
+				jmpDuration += Time.deltaTime;
+
+				if (jmpDuration < this.jumpDuration / 1000) {
+					GetComponent<Rigidbody2D> ().velocity = new Vector2 (GetComponent<Rigidbody2D> ().velocity.x, this.jumpSpeed);
+				}
+
+			}
+		}
+	}
+
+    /*void jump()
     {
         if (!movementPause)
         {
@@ -425,94 +517,82 @@ public class PlayerController : MonoBehaviour
                 }
             }
         }
-    }
+    } */
 
-    void Update ()
-    {
-        GetComponent<BoxCollider2D>().size = (GetComponent<SpriteRenderer>().sprite.rect.size / 100);
-        isOnGround = onGround();
+	void Update ()
+	{
+		leftWall = onLeftWall ();
+		rightWall = onRightWall ();
+		isOnGround = onGround();
+		bool isDashing = invincibility.pollIsDodging ();
+		if (isDashing) {
+			if (stat != status.dashing) {
+				anim.Play ("Dodging", 0, 1);
+				stat = status.dashing;
+			} else {
 
-        leftWall = onLeftWall();
-        rightWall = onRightWall();
-        isOnGround = onGround();
+			}
+		} else {
+			if (stat == status.dashing) {
+				stat = status.stationary;
+			}
+		}
 
-        if (isOnGround)
-        {
-            if (GetComponent<Rigidbody2D>().velocity.y <= 0)
-            {
-                canDoubleJump = true;
-                if (GetComponent<Rigidbody2D>().velocity != Vector2.zero)
-                {
-                    if (!horizontal)
-                    {
-                        GetComponent<Rigidbody2D>().velocity = Vector3.Lerp(GetComponent<Rigidbody2D>().velocity, Vector2.zero, Time.deltaTime * slowDownSpeed);
-                    }
-                }
-            }
-            else
-            {
-                isOnGround = false;
-            }
-        }
+		if (!isOnGround && (stat == status.slidingOnWall || stat == status.wallJump || stat == status.standingJump) && (animNeedsFinish <= 0)) {
+			stat = status.falling;
+		}
 
+		if (animNeedsFinish > 0) {
+			animNeedsFinish -= Time.deltaTime;
+		} else {
+			if (!isOnGround) {
+				if (leftWall || rightWall) {
+					stat = status.slidingOnWall;
+				} else {
+					stat = status.falling;
+				}
+			}
+		}
 
-        if (horizontal == false && isOnGround == true && !invincibility.isDogding)
-        {
-            anim.SetInteger("State", 0);
-            
-        }
-        //if (isOnGround == false && !invincibility.isDogding)
-        //{
-        //    anim.SetInteger("State", 3);
-        //}
+		if (stat == status.slidingOnWall) {
+			//activate sliding anim
+			anim.Play ("wallToRightWallSlide" , 0);
+			//anim.SetInteger("State", 5);
+			stat = status.slidingOnWall;
+		} else if (stat == status.falling) {
+			//activate falling anim
+			anim.Play ("Falling" , 0);
+			//anim.SetInteger("State", 3);
+			stat = status.falling;
+		}
 
-            if (isOnGround == true)
-        {
-            Jumping = false;
-        }
+		if (isOnGround) {
+			if (GetComponent<Rigidbody2D> ().velocity.y <= 0) {
+				canDoubleJump = true;
+				if (GetComponent<Rigidbody2D> ().velocity != Vector2.zero) {
+					if (!horizontal) {
+						GetComponent<Rigidbody2D> ().velocity = Vector3.Lerp (GetComponent<Rigidbody2D> ().velocity, Vector2.zero, Time.deltaTime * slowDownSpeed);
+					}
+				}
+			} else {
+				isOnGround = false;
+			}
+		}
 
-        if (!isOnGround && (leftWall || rightWall) && Jumping)
-        {
-            Jumping = false;
-        }
+		if (horizontal == false && isOnGround && !isDashing)
+		{
+			//idle
+			if (Mathf.Abs(GetComponent<Rigidbody2D> ().velocity.x) < 0.2f || stat == status.falling) {
+				anim.Play ("Idle", 0);
+				//anim.SetInteger("State", 0);
+				stat = status.stationary;
+			}
+		}
 
-        if (!isOnGround && (leftWall || rightWall) && !Jumping)
-        {
-            anim.SetInteger("State", 5);
-        }
-        else
-        {
-            Jumping = false;
-        }
-
-        if (isOnGround)
-        {
-            if (GetComponent<Rigidbody2D>().velocity.y <= 0)
-            {
-                canDoubleJump = true;
-                if (GetComponent<Rigidbody2D>().velocity != Vector2.zero)
-                {
-                    if (!horizontal)
-                    {
-                        GetComponent<Rigidbody2D>().velocity = Vector3.Lerp(GetComponent<Rigidbody2D>().velocity, Vector2.zero, Time.deltaTime * slowDownSpeed);
-                    }
-                }
-            }
-            else
-            {
-                isOnGround = false;
-            }
-        }
-
-        if (Input.GetKeyDown("space"))
-        {
-           
-        }
-
-        horizontal = false;
+		horizontal = false;
 		keyPressDown = false;
 		canJumpVariable = false;
-    }
+	}
 
     private bool onGround()
     {
@@ -521,101 +601,93 @@ public class PlayerController : MonoBehaviour
 
 		//bottom of players position (not relative to rotation)
 		Vector2 lineStart = new Vector2(this.transform.position.x, this.transform.position.y - ((GetComponent<SpriteRenderer> ().sprite.rect.size.y * (transform.lossyScale.y / 2)) / 100) + 0.1f);
-
 		//end of seach line
         Vector2 searchVector = new Vector2(this.transform.position.x, lineStart.y - checkLength);
-
 		//linecast all objects that intersect above
 		RaycastHit2D[] hitAll = Physics2D.LinecastAll(lineStart, searchVector);
+		//debug for search line
+		Debug.DrawLine(lineStart, searchVector,Color.green);
+
+
+		//bottom of players position (not relative to rotation)
+		lineStart = new Vector2(this.transform.position.x - rend.bounds.size.x/4, this.transform.position.y - ((GetComponent<SpriteRenderer> ().sprite.rect.size.y * (transform.lossyScale.y / 2)) / 100) + 0.1f);
+		//end of seach line
+		searchVector = new Vector2(this.transform.position.x - rend.bounds.size.x/4, lineStart.y - checkLength);
+		RaycastHit2D[] hitAll2 = Physics2D.LinecastAll(lineStart, searchVector);
+		//debug for search line
+		Debug.DrawLine(lineStart, searchVector,Color.green);
+
+
+		//bottom of players position (not relative to rotation)
+		lineStart = new Vector2(this.transform.position.x + rend.bounds.size.x/4, this.transform.position.y - ((GetComponent<SpriteRenderer> ().sprite.rect.size.y * (transform.lossyScale.y / 2)) / 100) + 0.1f);
+		//end of seach line
+		searchVector = new Vector2(this.transform.position.x + rend.bounds.size.x/4, lineStart.y - checkLength);
+		RaycastHit2D[] hitAll3 = Physics2D.LinecastAll(lineStart, searchVector);
+		//debug for search line
+		Debug.DrawLine(lineStart, searchVector,Color.green);
+
 
 		//loop through all hits and return first object that isn't self
-		RaycastHit2D hit = new RaycastHit2D();
 		foreach (RaycastHit2D hi in hitAll) {
 			if (hi.transform != transform) {
-				hit = hi;
-				break;
+				return true;
 			}
 		}
 
-		//debug for search line
-        Debug.DrawLine(lineStart, searchVector,Color.green);
-
-        //deal with rotating the character to match the object it is standing on
-		if (rotateAroundObject) {
-			//check if raycast hit anyting
-			if (hit) {
-				
-				//get hit rotation and bring it in to search space
-				//makes it within -180 -> 180
-				Vector3 rot = hit.transform.rotation.eulerAngles;
-				while (rot.z < -180 || rot.z > 180) {
-					if (rot.z > 180) {
-						rot.z -= 180;
-					} else if (rot.z < -180) {
-						rot.z += 180;
-					}
-				}
-
-				//check if rotation is within accepted limits
-				if (rot.z > MinMaxZRot.x &&
-					rot.z < MinMaxZRot.y) {
-					//setup vector 3 for current rotation + hit's
-					Vector3 tempEular = transform.rotation.eulerAngles;
-					tempEular.z = rot.z;
-
-					//translate above position into quaternion and set rotation
-					Quaternion temp = Quaternion.Euler(tempEular);
-					transform.rotation = temp;
-				}
-				else {
-					//if hit rotation to large reset rotation
-					Quaternion temp = transform.rotation;
-					temp.z = 0;
-					transform.rotation = temp;
-				}
-			}
-			else {
-				//if no hit reset rotation
-				Quaternion temp = transform.rotation;
-				temp.z = 0;
-				transform.rotation = temp;
+		//loop through all hits and return first object that isn't self
+		foreach (RaycastHit2D hi in hitAll2) {
+			if (hi.transform != transform) {
+				return true;
 			}
 		}
 
-		//return true if hit exists
-		return hit;
+		//loop through all hits and return first object that isn't self
+		foreach (RaycastHit2D hi in hitAll3) {
+			if (hi.transform != transform) {
+				return true;
+			}
+		}
+
+		//return false if hit doesn't exists
+		return false;
     }
 
     private bool onLeftWall()
     {
 
-        float checkLength = 0.2f;
+        float checkLength = 0.3f;
         float colliderThreshold = 0.1f;
 
         Vector2 lineStart = new Vector2(this.transform.position.x - rend.bounds.extents.x - colliderThreshold, this.transform.position.y);
-
         Vector2 searchVector = new Vector2(lineStart.x - checkLength, this.transform.position.y);
-
         RaycastHit2D hit = Physics2D.Linecast(lineStart, searchVector);
         Debug.DrawLine(lineStart, searchVector, Color.red);
 
-        return hit;
+		lineStart = new Vector2(this.transform.position.x - rend.bounds.extents.x - colliderThreshold, this.transform.position.y - rend.bounds.size.y/3);
+		searchVector = new Vector2(lineStart.x - checkLength, this.transform.position.y - rend.bounds.size.y/3);
+		RaycastHit2D hit2 = Physics2D.Linecast(lineStart, searchVector);
+		Debug.DrawLine(lineStart, searchVector,Color.red);
+
+		return (hit || hit2);
     }
 
     private bool onRightWall()
     {
        
-        float checkLength = 0.2f;
+        float checkLength = 0.3f;
         float colliderThreshold = 0.1f;
 
         Vector2 lineStart = new Vector2(this.transform.position.x + rend.bounds.extents.x + colliderThreshold, this.transform.position.y);
-       
-
         Vector2 searchVector = new Vector2(lineStart.x + checkLength, this.transform.position.y);
+		RaycastHit2D hit = Physics2D.Linecast(lineStart, searchVector);
+		Debug.DrawLine (lineStart, searchVector, Color.red);
 
-        RaycastHit2D hit = Physics2D.Linecast(lineStart, searchVector);
+		lineStart = new Vector2(this.transform.position.x + rend.bounds.extents.x + colliderThreshold, this.transform.position.y - rend.bounds.size.y/3);
+		searchVector = new Vector2(lineStart.x + checkLength, this.transform.position.y - rend.bounds.size.y/3);
+		RaycastHit2D hit2 = Physics2D.Linecast(lineStart, searchVector);
         Debug.DrawLine(lineStart, searchVector,Color.red);
-        return hit;
+
+		return (hit || hit2);
 
     }
 
@@ -639,4 +711,27 @@ public class PlayerController : MonoBehaviour
 
     }
 
+	float getAnimationTime(string animName) {
+		RuntimeAnimatorController animController = anim.runtimeAnimatorController;
+		for (int a = 0; a < animController.animationClips.Length; a++) {
+			if (animController.animationClips [a].name == animName) {
+				return animController.animationClips [a].length;
+			}
+		}
+		return 0;
+	}
+
+}
+
+public enum status {
+	stationary,
+	walking,
+	running,
+	standingJump,
+	dodging,
+	slidingOnWall,
+	wallJump,
+	death,
+	falling,
+	dashing
 }

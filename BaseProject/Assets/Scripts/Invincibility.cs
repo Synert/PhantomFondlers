@@ -50,6 +50,10 @@ public class Invincibility : MonoBehaviour
     
     }
 
+	public bool pollIsDodging() {
+		return isDogding;
+	}
+
     void dodge(variableData _var)
     {
         float stickVel = -_var.state.ThumbStickLeft.inputs.x;
@@ -58,7 +62,7 @@ public class Invincibility : MonoBehaviour
             if (GetComponent<Rigidbody2D>().velocity.x > -playerController.MaxSpeed && stickVel < 0)
             {
                 GetComponent<PlayerController>().playSound(4,1,6);
-                anim.SetInteger("State", 4);
+                //anim.SetInteger("State", 4);
                 GetComponent<Rigidbody2D>().AddForce(new Vector2(-playerController.Acceleration, 0.0f));
                 Debug.Log("Moving Right");
                 direction = 1;
@@ -71,10 +75,10 @@ public class Invincibility : MonoBehaviour
                 isInvincible = true;
 
             }
-            else// if (GetComponent<Rigidbody2D>().velocity.x < playerController.MaxSpeed && stickVel > 0)
+            else if (GetComponent<Rigidbody2D>().velocity.x < playerController.MaxSpeed && stickVel > 0)
             {
                 GetComponent<PlayerController>().playSound(4,1,1);
-                anim.SetInteger("State", 4);
+                //anim.SetInteger("State", 4);
                 GetComponent<Rigidbody2D>().AddForce(new Vector2(playerController.Acceleration, 0.0f));
                 Debug.Log("Moving Left");
                 direction = -1;
