@@ -57,42 +57,44 @@ public class Invincibility : MonoBehaviour
     void dodge(variableData _var)
     {
         float stickVel = -_var.state.ThumbStickLeft.inputs.x;
-        if (cooldown <= 0)
+        if (GetComponent<PlayerController>().isOnGround)
         {
-            if (GetComponent<Rigidbody2D>().velocity.x > -playerController.MaxSpeed && stickVel < 0)
+            if (cooldown <= 0)
             {
-                GetComponent<PlayerController>().playSound(4,1,6);
-                //anim.SetInteger("State", 4);
-                GetComponent<Rigidbody2D>().AddForce(new Vector2(-playerController.Acceleration, 0.0f));
-                Debug.Log("Moving Right");
-                direction = 1;
-                cooldown = 1.0f;
-                duration = 0.8f;
-                destitation = new Vector2((transform.position.x + 5), transform.position.y);
-                originalDistance = Vector2.Distance(transform.position, destitation);
-                playerController.movementPause = true;
-                isDogding = true;
-                isInvincible = true;
+                if (GetComponent<Rigidbody2D>().velocity.x > -playerController.MaxSpeed && stickVel < 0)
+                {
+                    GetComponent<PlayerController>().playSound(4, 1, 6);
+                    //anim.SetInteger("State", 4);
+                    GetComponent<Rigidbody2D>().AddForce(new Vector2(-playerController.Acceleration, 0.0f));
+                    Debug.Log("Moving Right");
+                    direction = 1;
+                    cooldown = 2.0f;
+                    duration = 1.5f;
+                    destitation = new Vector2((transform.position.x + 10), transform.position.y);
+                    originalDistance = Vector2.Distance(transform.position, destitation);
+                    playerController.movementPause = true;
+                    isDogding = true;
+                    isInvincible = true;
 
+                }
+                else if (GetComponent<Rigidbody2D>().velocity.x < playerController.MaxSpeed && stickVel > 0)
+                {
+                    GetComponent<PlayerController>().playSound(4, 1, 1);
+                    //anim.SetInteger("State", 4);
+                    GetComponent<Rigidbody2D>().AddForce(new Vector2(playerController.Acceleration, 0.0f));
+                    Debug.Log("Moving Left");
+                    direction = -1;
+                    cooldown = 2.0f;
+                    duration = 1.5f;
+                    destitation = new Vector2((transform.position.x - 10), transform.position.y);
+                    originalDistance = Vector2.Distance(transform.position, destitation);
+                    playerController.movementPause = true;
+                    isDogding = true;
+                    isInvincible = true;
+                }
             }
-            else if (GetComponent<Rigidbody2D>().velocity.x < playerController.MaxSpeed && stickVel > 0)
-            {
-                GetComponent<PlayerController>().playSound(4,1,1);
-                //anim.SetInteger("State", 4);
-                GetComponent<Rigidbody2D>().AddForce(new Vector2(playerController.Acceleration, 0.0f));
-                Debug.Log("Moving Left");
-                direction = -1;
-                cooldown = 1.0f;
-                duration = 0.8f;
-                destitation = new Vector2((transform.position.x - 5), transform.position.y);
-                originalDistance = Vector2.Distance(transform.position, destitation);
-                playerController.movementPause = true;
-                isDogding = true;
-                isInvincible = true;
-            }
+
         }
-
-
         //StartCoroutine(StartCountdown());
     }
 
@@ -100,7 +102,10 @@ public class Invincibility : MonoBehaviour
     {
         duration -= Time.deltaTime;
         float currentDistance = Vector2.Distance(transform.position, destitation);
-        transform.position = Vector2.Lerp(transform.position, destitation, Time.deltaTime + ((currentDistance/ originalDistance) *Time.deltaTime));
+        if (duration <= 1f)
+        { 
+            transform.position = Vector2.Lerp(transform.position, destitation, Time.deltaTime + ((currentDistance / originalDistance) * Time.deltaTime));
+        }
         if(duration <= 0)
         {
             isDogding = false;

@@ -540,7 +540,8 @@ public class PlayerController : MonoBehaviour
 		if (isDashing) {
 			if (stat != status.dashing) {
 				anim.Play ("Dodging", 0, 1);
-				stat = status.dashing;
+                animNeedsFinish = getAnimationTime("Dodging");
+                stat = status.dashing;
 			} else {
 
 			}
