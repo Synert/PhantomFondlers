@@ -12,6 +12,8 @@ public class WeaponPickup : MonoBehaviour
     public Transform projectile;
     public int damage;
     GameObject owner;
+    bool held = false;
+    public float powerCap;
 
     public enum DIRECTION
     {
@@ -34,24 +36,59 @@ public class WeaponPickup : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        ChildUpdate();
+    }
+
+    public virtual void ChildUpdate()
+    {
         if (cooldown > 0.0f)
         {
             cooldown -= 1000.0f * Time.deltaTime;
+        }
+
+        Vector3 temp = transform.localScale;
+        if (transform.rotation.eulerAngles.z < 180)
+        {
+            //GetComponent<SpriteRenderer>().flipX = true;
+            transform.localScale = new Vector3(-Mathf.Abs(temp.x), temp.y, temp.z);
+        }
+        else
+        {
+            //GetComponent<SpriteRenderer>().flipX = false;
+            transform.localScale = new Vector3(Mathf.Abs(temp.x), temp.y, temp.z);
         }
     }
 
     void OnTriggerStay2D(Collider2D col)
     {
-        if (cooldown <= 0.0f)
+        //on ground, attempt to pick up
+        if (!held)
+        {
+            if (cooldown <= 0.0f)
+            {
+                if (col.tag == "Player")
+                {
+                    PlayerAttacks player = col.GetComponentInChildren<PlayerAttacks>();
+
+                    if (GetOwner() == null)
+                    {
+                        player.SwitchWeapon(transform);
+
+                    }
+                }
+            }
+        }
+        //held, so it's an attack
+        else if(held && GetOwner() != null)
         {
             if (col.tag == "Player")
             {
-                PlayerAttacks player = col.GetComponentInChildren<PlayerAttacks>();
+                PlayerController player = col.GetComponentInChildren<PlayerController>();
 
-                if (GetOwner() == null)
+                if (GetOwner().GetComponentInChildren<PlayerController>() != player)
                 {
-                    player.SwitchWeapon(transform);
-                    
+                    player.takeDamage(damage);
+                    Debug.Log("aaa");
                 }
             }
         }
@@ -60,10 +97,15 @@ public class WeaponPickup : MonoBehaviour
     public void Swapped()
     {
         cooldown = 1000.0f;
-        if(owner != null)
+        /*if(owner != null)
         {
             owner = null;
+            //held = false;
         }
+        else
+        {
+            //held = true;
+        }*/
     }
 
     public bool GetAngleLock()
@@ -181,11 +223,15 @@ public class WeaponPickup : MonoBehaviour
 
     public void SetOwner(GameObject set)
     {
-        if(owner != null)
-        {
-            return;
-        }
         owner = set;
+        if (set == null)
+        {
+            held = false;
+        }
+        else
+        {
+            held = true;
+        }
     }
 
     public GameObject GetOwner()
