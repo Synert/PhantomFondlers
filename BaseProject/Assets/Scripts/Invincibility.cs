@@ -8,10 +8,11 @@ public class Invincibility : MonoBehaviour
     public KeyCode InvincibilityKey;
     public bool isInvincible;
     public float SpiritLevel = 1.0f;
+    public bool isDogding = false;
+    Animator anim;
 
     private float currCountdownValue = 0.1f;
     private float direction;
-    private bool isDogding = false;
     private Vector2 destitation;
     private float cooldown = 0f;
     private float duration = 0f;
@@ -20,8 +21,8 @@ public class Invincibility : MonoBehaviour
     // Use this for initialization
     void Start ()
     {
-		
-	}
+        anim = GetComponent<Animator>();
+    }
 
     // Update is called once per frame
     void Update()
@@ -57,6 +58,7 @@ public class Invincibility : MonoBehaviour
             if (GetComponent<Rigidbody2D>().velocity.x > -playerController.MaxSpeed && stickVel < 0)
             {
                 GetComponent<PlayerController>().playSound(4,1,6);
+                anim.SetInteger("State", 4);
                 GetComponent<Rigidbody2D>().AddForce(new Vector2(-playerController.Acceleration, 0.0f));
                 Debug.Log("Moving Right");
                 direction = 1;
@@ -72,6 +74,7 @@ public class Invincibility : MonoBehaviour
             else// if (GetComponent<Rigidbody2D>().velocity.x < playerController.MaxSpeed && stickVel > 0)
             {
                 GetComponent<PlayerController>().playSound(4,1,1);
+                anim.SetInteger("State", 4);
                 GetComponent<Rigidbody2D>().AddForce(new Vector2(playerController.Acceleration, 0.0f));
                 Debug.Log("Moving Left");
                 direction = -1;
@@ -92,7 +95,6 @@ public class Invincibility : MonoBehaviour
     void movement(float direction)
     {
         duration -= Time.deltaTime;
-        Debug.Log(cooldown);
         float currentDistance = Vector2.Distance(transform.position, destitation);
         transform.position = Vector2.Lerp(transform.position, destitation, Time.deltaTime + ((currentDistance/ originalDistance) *Time.deltaTime));
         if(duration <= 0)

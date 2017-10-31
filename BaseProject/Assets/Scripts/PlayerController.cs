@@ -6,6 +6,7 @@ using UnityEngine.SceneManagement;
 
 public class PlayerController : MonoBehaviour
 {
+    public Invincibility invincibility;
     public Renderer rend = new Renderer();
     public float MaxSpeed = 6;
     public float Acceleration = 5;
@@ -24,12 +25,18 @@ public class PlayerController : MonoBehaviour
 	public float resetJumpHeight = 1;
 	public Vector2 MinMaxZRot = new Vector2();
 
+
+    public bool leftWall;
+    public bool rightWall;
+
     public bool enableWallJump = true;
     public bool enableDoubleJump = true;
     public bool wallHitJump = true;
-
-	//===== Data for buttonMashing ====//
-	public float arbitaryHealth = 0;
+    public bool leftWallHit = false;
+    public bool rightWallHit = false;
+    public bool Jumping = false;
+    //===== Data for buttonMashing ====//
+    public float arbitaryHealth = 0;
 	public PlayerController ontopOf;
 	public float increaseCount = 0;
 	public float increaseWhenOntopCount = 0;
@@ -59,7 +66,7 @@ public class PlayerController : MonoBehaviour
         facingRight = true;
         anim = GetComponent<Animator>();
         rend = GetComponent<Renderer>();
-		GetComponent<BoxCollider2D> ().size = (GetComponent<SpriteRenderer> ().sprite.rect.size / 100);
+		
 
     }
 
@@ -166,7 +173,12 @@ public class PlayerController : MonoBehaviour
                 {
                     if (GetComponent<Rigidbody2D>().velocity.x > -this.MaxSpeed)
                     {
-                        anim.SetInteger("State", 1);
+                        if (isOnGround)
+                        {
+                            anim.SetInteger("State", 1);
+                            
+                        }
+                        GetComponent<SpriteRenderer>().flipX = true;
                         facingRight = false;
                         GetComponent<Rigidbody2D>().AddForce(new Vector2(-this.Acceleration, 0.0f));
                     }
@@ -175,7 +187,12 @@ public class PlayerController : MonoBehaviour
                 {
                     if (GetComponent<Rigidbody2D>().velocity.x < this.MaxSpeed)
                     {
-                        anim.SetInteger("State", 1);
+                        if (isOnGround)
+                        {
+                            anim.SetInteger("State", 1);
+                            
+                        }
+                        GetComponent<SpriteRenderer>().flipX = false;
                         facingRight = true;
                         GetComponent<Rigidbody2D>().AddForce(new Vector2(this.Acceleration, 0.0f));
                     }
@@ -187,7 +204,12 @@ public class PlayerController : MonoBehaviour
                 {
                     if (GetComponent<Rigidbody2D>().velocity.x > -this.MaxSpeed * sprintSpeedModifier)
                     {
-                        anim.SetInteger("State", 2);
+                        if (isOnGround)
+                        {
+                            anim.SetInteger("State", 2);
+                            
+                        }
+                        GetComponent<SpriteRenderer>().flipX = true;
                         facingRight = false;
                         GetComponent<Rigidbody2D>().AddForce(new Vector2(-this.Acceleration * sprintSpeedModifier, 0.0f));
                     }
@@ -196,7 +218,12 @@ public class PlayerController : MonoBehaviour
                 {
                     if (GetComponent<Rigidbody2D>().velocity.x < this.MaxSpeed * sprintSpeedModifier)
                     {
-                        anim.SetInteger("State", 2);
+                        if (isOnGround)
+                        {
+                            anim.SetInteger("State", 2);
+                            
+                        }
+                        GetComponent<SpriteRenderer>().flipX = false;
                         facingRight = true;
                         GetComponent<Rigidbody2D>().AddForce(new Vector2(this.Acceleration * sprintSpeedModifier, 0.0f));
                     }
@@ -206,97 +233,276 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    void jump() {
-		if (!movementPause) {
-			if (!keyPressDown) {
-				keyPressDown = true;
-				if (isOnGround || (canDoubleJump && enableDoubleJump || wallHitJump && enableWallJump)) {
-					bool wallHit = false;
-					int wallHitDirection = 0;
-                    
-					bool leftWallHit = onLeftWall ();
-					bool rightWallHit = onRightWall ();
+    //   void jump() {
+    //	if (!movementPause) {
+    //		if (!keyPressDown) {
+    //			keyPressDown = true;
+    //			if (isOnGround || (canDoubleJump && enableDoubleJump || wallHitJump && enableWallJump)) {
+    //				bool wallHit = false;
+    //				int wallHitDirection = 0;
 
-                    if (isOnGround || (canDoubleJump && enableDoubleJump) || leftWallHit || rightWallHit)
+    //				leftWallHit = onLeftWall ();
+    //				rightWallHit = onRightWall ();
+
+    //                   if (isOnGround || (canDoubleJump && enableDoubleJump) || leftWallHit || rightWallHit)
+    //                   {
+    //                       if (isOnGround == true)
+    //                       {
+    //                           //Jumping from ground
+    //                           playSound(0, 1.25f);
+    //                           anim.SetInteger("State", 3);
+    //                       }
+    //                       else if (!isOnGround && !(leftWallHit || rightWallHit))
+    //                       {
+    //                           //Double jump
+    //                           playSound(0, 0.5f);
+    //                           anim.SetInteger("State", 3);
+    //                       }
+    //                       else
+    //                       {
+    //                           Debug.Log("JUMPING FROM WALL");
+    //                           //Jumping from wall
+    //                           JumpingFromWall = true;
+    //                           anim.SetInteger("State", 6);
+    //                           playSound(0, 0.7f);
+    //                       }
+    //                   }
+
+    //                   if (horizontal) {
+    //					if (leftWallHit && enableWallJump) {
+    //                           wallHit = true;
+    //						wallHitDirection = 1;
+    //					} else if (rightWallHit && enableWallJump) {
+
+    //                           wallHit = true;
+    //						wallHitDirection = -1;
+    //					}
+    //				}
+
+    //				if (!wallHit) {
+    //					if (isOnGround || (canDoubleJump && enableDoubleJump)) {
+    //                           GetComponent<Rigidbody2D> ().velocity = new Vector2 (GetComponent<Rigidbody2D> ().velocity.x, this.jumpSpeed);
+    //						jumpDuration = 0.0f;
+    //						canDoubleJump = true;
+    //					}
+    //				} else {
+
+    //					GetComponent<Rigidbody2D> ().velocity = new Vector2 (this.jumpSpeed * wallHitDirection, this.jumpSpeed);
+    //                       jmpDuration = 0.0f;
+    //					canJumpVariable = true;
+    //				}
+
+    //				if (!isOnGround && !wallHit) {
+    //					canDoubleJump = false;
+    //				}
+    //			}
+    //		} else if (canJumpVariable) {
+    //			jmpDuration += Time.deltaTime;
+
+    //			if (jmpDuration < this.jumpDuration / 1000) {
+    //				GetComponent<Rigidbody2D> ().velocity = new Vector2 (GetComponent<Rigidbody2D> ().velocity.x, this.jumpSpeed);
+    //			}
+    //		}
+    //	}
+    //}
+
+
+    // Update is called once per frame
+
+    void jump()
+    {
+        if (!movementPause)
+        {
+            if (!keyPressDown)
+            {
+
+                keyPressDown = true;
+                if (isOnGround || (canDoubleJump && enableDoubleJump || wallHitJump && enableWallJump))
+                {
+                    bool wallHit = false;
+                    int wallHitDirection = 0;
+
+                    if (isOnGround || (canDoubleJump && enableDoubleJump) || leftWall || rightWall)
                     {
                         if (isOnGround == true)
                         {
+                           
                             playSound(0, 1.25f);//SOund
                         }
-                        else if (!isOnGround && !(leftWallHit || rightWallHit))
+                        else if (!isOnGround && !(leftWall || rightWall))
                         {
+                            
                             playSound(0, 0.5f);
                         }
                         else
                         {
+                      
                             playSound(0, 0.7f);
                         }
                     }
 
-                    if (horizontal) {
-						if (leftWallHit && enableWallJump) {
-							wallHit = true;
-							wallHitDirection = 1;
-						} else if (rightWallHit && enableWallJump) {
-							wallHit = true;
-							wallHitDirection = -1;
-						}
-					}
+                    if (leftWall || rightWall)
+                    {
+                        wallHit = true;
+                    }
 
-					if (!wallHit) {
-						if (isOnGround || (canDoubleJump && enableDoubleJump)) {
+                    if (horizontal)
+                    {
+                        if (wallHit)
+                        {
+                            if (enableWallJump)
+                            {
+                                if (leftWall)
+                                {
+                                    wallHitDirection = 1;
+                                }
+                                else if (rightWall)
+                                {
+                                    wallHitDirection = -1;
+                                }
+                            }
+                        }
+                    }
+
+                    if (!wallHit)
+                    {
+                        if (isOnGround || (canDoubleJump && enableDoubleJump))
+                        {
                             anim.SetInteger("State", 3);
-                            GetComponent<Rigidbody2D> ().velocity = new Vector2 (GetComponent<Rigidbody2D> ().velocity.x, this.jumpSpeed);
-							jumpDuration = 0.0f;
-							canDoubleJump = true;
-						}
-					} else {
-						GetComponent<Rigidbody2D> ().velocity = new Vector2 (this.jumpSpeed * wallHitDirection, this.jumpSpeed);
+                            GetComponent<Rigidbody2D>().velocity = new Vector2(GetComponent<Rigidbody2D>().velocity.x, this.jumpSpeed);
+                            jumpDuration = 0.0f;
+                            Jumping = true;
+                            canDoubleJump = true;
+                        }
+                    }
+                    else
+                    {
+                        if (isOnGround)
+                        {
+                            anim.SetInteger("State", 3);
+                            GetComponent<Rigidbody2D>().velocity = new Vector2(GetComponent<Rigidbody2D>().velocity.x, this.jumpSpeed);
+                            jmpDuration = 0.0f;
+                            canJumpVariable = true;
+                            Jumping = true;
+                        }
+                        else
+                        {
+                            if (wallHitDirection != 0)
+                            {
+                                anim.SetInteger("State", 6);
+                                Jumping = true;
+                                GetComponent<Rigidbody2D>().velocity = new Vector2(this.jumpSpeed * wallHitDirection, this.jumpSpeed);
+                                jmpDuration = 0.0f;
+                                canJumpVariable = true;
+                            }
+                            else
+                            {
+                               
+                            }
+                        }
 
-						jmpDuration = 0.0f;
-						canJumpVariable = true;
-					}
 
-					if (!isOnGround && !wallHit) {
-						canDoubleJump = false;
-					}
-				}
-			} else if (canJumpVariable) {
-				jmpDuration += Time.deltaTime;
+                    }
 
-				if (jmpDuration < this.jumpDuration / 1000) {
-					GetComponent<Rigidbody2D> ().velocity = new Vector2 (GetComponent<Rigidbody2D> ().velocity.x, this.jumpSpeed);
-				}
-			}
-		}
-	}
+                    if (!isOnGround && !wallHit)
+                    {
+                        canDoubleJump = false;
+                    }
+                }
+            }
+            else if (canJumpVariable)
+            {
+                jmpDuration += Time.deltaTime;
 
-	// Update is called once per frame
-	void Update ()
+                if (jmpDuration < this.jumpDuration / 1000)
+                {
+                    GetComponent<Rigidbody2D>().velocity = new Vector2(GetComponent<Rigidbody2D>().velocity.x, this.jumpSpeed);
+                }
+            }
+        }
+    }
+
+    void Update ()
     {
+        GetComponent<BoxCollider2D>().size = (GetComponent<SpriteRenderer>().sprite.rect.size / 100);
+        isOnGround = onGround();
 
+        leftWall = onLeftWall();
+        rightWall = onRightWall();
         isOnGround = onGround();
 
         if (isOnGround)
         {
-            canDoubleJump = true;
-			if (GetComponent<Rigidbody2D> ().velocity != Vector2.zero) {
-				if (!horizontal) {
-					GetComponent<Rigidbody2D> ().velocity = Vector3.Lerp (GetComponent<Rigidbody2D> ().velocity, Vector2.zero, Time.deltaTime * slowDownSpeed);
-				}
-			}
+            if (GetComponent<Rigidbody2D>().velocity.y <= 0)
+            {
+                canDoubleJump = true;
+                if (GetComponent<Rigidbody2D>().velocity != Vector2.zero)
+                {
+                    if (!horizontal)
+                    {
+                        GetComponent<Rigidbody2D>().velocity = Vector3.Lerp(GetComponent<Rigidbody2D>().velocity, Vector2.zero, Time.deltaTime * slowDownSpeed);
+                    }
+                }
+            }
+            else
+            {
+                isOnGround = false;
+            }
+        }
+
+
+        if (horizontal == false && isOnGround == true && !invincibility.isDogding)
+        {
+            anim.SetInteger("State", 0);
+            
+        }
+        //if (isOnGround == false && !invincibility.isDogding)
+        //{
+        //    anim.SetInteger("State", 3);
+        //}
+
+            if (isOnGround == true)
+        {
+            Jumping = false;
+        }
+
+        if (!isOnGround && (leftWall || rightWall) && Jumping)
+        {
+            Jumping = false;
+        }
+
+        if (!isOnGround && (leftWall || rightWall) && !Jumping)
+        {
+            anim.SetInteger("State", 5);
+        }
+        else
+        {
+            Jumping = false;
+        }
+
+        if (isOnGround)
+        {
+            if (GetComponent<Rigidbody2D>().velocity.y <= 0)
+            {
+                canDoubleJump = true;
+                if (GetComponent<Rigidbody2D>().velocity != Vector2.zero)
+                {
+                    if (!horizontal)
+                    {
+                        GetComponent<Rigidbody2D>().velocity = Vector3.Lerp(GetComponent<Rigidbody2D>().velocity, Vector2.zero, Time.deltaTime * slowDownSpeed);
+                    }
+                }
+            }
+            else
+            {
+                isOnGround = false;
+            }
         }
 
         if (Input.GetKeyDown("space"))
         {
            
         }
-
-        if (horizontal == false && isOnGround)
-        {
-            anim.SetInteger("State", 0);
-        }
-
 
         horizontal = false;
 		keyPressDown = false;
@@ -309,7 +515,7 @@ public class PlayerController : MonoBehaviour
         float checkLength = 0.5f;
 
 		//bottom of players position (not relative to rotation)
-		Vector2 lineStart = new Vector2(this.transform.position.x, this.transform.position.y - ((GetComponent<SpriteRenderer> ().sprite.rect.size.y * (transform.lossyScale.y / 2)) / 100));
+		Vector2 lineStart = new Vector2(this.transform.position.x, this.transform.position.y - ((GetComponent<SpriteRenderer> ().sprite.rect.size.y * (transform.lossyScale.y / 2)) / 100) + 0.1f);
 
 		//end of seach line
         Vector2 searchVector = new Vector2(this.transform.position.x, lineStart.y - checkLength);
