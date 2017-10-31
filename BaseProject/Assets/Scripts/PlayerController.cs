@@ -14,7 +14,12 @@ public class PlayerController : MonoBehaviour
 	public bool isOnGround = false;
 	public float slowDownSpeed;
 
-	public bool rotateAroundObject = true;
+    //===== Data for Animation ====//
+    Animator anim;
+    private bool facingRight;
+    //=============================
+
+    public bool rotateAroundObject = true;
 	public float rotationSpeed = 1;
 	public float resetJumpHeight = 1;
 	public Vector2 MinMaxZRot = new Vector2();
@@ -51,7 +56,8 @@ public class PlayerController : MonoBehaviour
     
     void Start()
     {
-        
+        facingRight = true;
+        anim = GetComponent<Animator>();
         rend = GetComponent<Renderer>();
 		GetComponent<BoxCollider2D> ().size = (GetComponent<SpriteRenderer> ().sprite.rect.size / 100);
 
@@ -160,6 +166,8 @@ public class PlayerController : MonoBehaviour
                 {
                     if (GetComponent<Rigidbody2D>().velocity.x > -this.MaxSpeed)
                     {
+                        anim.SetInteger("State", 1);
+                        facingRight = false;
                         GetComponent<Rigidbody2D>().AddForce(new Vector2(-this.Acceleration, 0.0f));
                     }
                 }
@@ -167,6 +175,8 @@ public class PlayerController : MonoBehaviour
                 {
                     if (GetComponent<Rigidbody2D>().velocity.x < this.MaxSpeed)
                     {
+                        anim.SetInteger("State", 1);
+                        facingRight = true;
                         GetComponent<Rigidbody2D>().AddForce(new Vector2(this.Acceleration, 0.0f));
                     }
                 }
@@ -177,6 +187,8 @@ public class PlayerController : MonoBehaviour
                 {
                     if (GetComponent<Rigidbody2D>().velocity.x > -this.MaxSpeed * sprintSpeedModifier)
                     {
+                        anim.SetInteger("State", 2);
+                        facingRight = false;
                         GetComponent<Rigidbody2D>().AddForce(new Vector2(-this.Acceleration * sprintSpeedModifier, 0.0f));
                     }
                 }
@@ -184,6 +196,8 @@ public class PlayerController : MonoBehaviour
                 {
                     if (GetComponent<Rigidbody2D>().velocity.x < this.MaxSpeed * sprintSpeedModifier)
                     {
+                        anim.SetInteger("State", 2);
+                        facingRight = true;
                         GetComponent<Rigidbody2D>().AddForce(new Vector2(this.Acceleration * sprintSpeedModifier, 0.0f));
                     }
                 }
@@ -231,7 +245,8 @@ public class PlayerController : MonoBehaviour
 
 					if (!wallHit) {
 						if (isOnGround || (canDoubleJump && enableDoubleJump)) {
-							GetComponent<Rigidbody2D> ().velocity = new Vector2 (GetComponent<Rigidbody2D> ().velocity.x, this.jumpSpeed);
+                            anim.SetInteger("State", 3);
+                            GetComponent<Rigidbody2D> ().velocity = new Vector2 (GetComponent<Rigidbody2D> ().velocity.x, this.jumpSpeed);
 							jumpDuration = 0.0f;
 							canDoubleJump = true;
 						}
@@ -277,7 +292,13 @@ public class PlayerController : MonoBehaviour
            
         }
 
-		horizontal = false;
+        if (horizontal == false && isOnGround)
+        {
+            anim.SetInteger("State", 0);
+        }
+
+
+        horizontal = false;
 		keyPressDown = false;
 		canJumpVariable = false;
     }
@@ -393,6 +414,18 @@ public class PlayerController : MonoBehaviour
         GetComponent<AudioSource>().pitch = defaultVal;
        GetComponent<AudioSource>().clip = AudioClip[_clip];
         GetComponent<AudioSource>().Play();
+    }
+
+    private void flipAnimation(float flip)
+    {
+        if (flip > 0 && !facingRight || flip < 0 && facingRight)
+        {
+            facingRight = !facingRight;
+            Vector3 playerScale = transform.localScale;
+            playerScale.x *= -1;
+            transform.localScale = playerScale;
+        }
+
     }
 
 }
