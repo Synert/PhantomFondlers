@@ -59,14 +59,19 @@ public class PlayerController : MonoBehaviour
 
     //Audio
     public AudioClip[] AudioClip;
-   
+
+    //settigns
+    public GameObject SettingsObj;
     
     void Start()
     {
         facingRight = true;
         anim = GetComponent<Animator>();
         rend = GetComponent<Renderer>();
-		
+        SettingsObj = GameObject.Find("PlayerVal").gameObject;
+        GetComponent<PlayerController>().arbitaryHealth = SettingsObj.GetComponent<PlayerValues>().health;
+        GetComponent<PlayerController>().respawnHealth = SettingsObj.GetComponent<PlayerValues>().respawnHealth;
+        GetComponent<PlayerController>().respawnCount = SettingsObj.GetComponent<PlayerValues>().spamCount;
 
     }
 
