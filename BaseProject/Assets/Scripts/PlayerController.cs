@@ -16,6 +16,8 @@ public class PlayerController : MonoBehaviour
 	public bool isOnGround = false;
 	public float slowDownSpeed;
 
+    public Color playerColor = Color.white;
+
     //===== Data for Animation ====//
     Animator anim;
     private bool facingRight;
@@ -530,7 +532,8 @@ public class PlayerController : MonoBehaviour
 
 	void Update ()
 	{
-
+        GetComponent<SpriteRenderer>().color = playerColor;
+        m_attack.SetColor(playerColor);
         Vector2 temp = GetComponent<SpriteRenderer>().bounds.size;
         GetComponent<Collider2D>().bounds.size.Set(temp.x, temp.y, 0);
         leftWall = onLeftWall ();

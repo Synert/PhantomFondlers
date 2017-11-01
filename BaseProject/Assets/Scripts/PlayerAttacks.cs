@@ -273,4 +273,19 @@ public class PlayerAttacks : MonoBehaviour
     {
         return canAttack;
     }
+
+    public void SetColor(Color set)
+    {
+        foreach(SpriteRenderer sprite in m_duster.GetComponentsInChildren<SpriteRenderer>())
+        {
+            sprite.color = set;
+        }
+        if(m_weapon)
+        {
+            foreach (SpriteRenderer sprite in m_weapon.GetComponentsInChildren<SpriteRenderer>())
+            {
+                sprite.color = set;
+            }
+        }
+    }
 }
