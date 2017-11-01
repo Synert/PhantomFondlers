@@ -636,7 +636,7 @@ public class PlayerController : MonoBehaviour
 		//end of seach line
         Vector2 searchVector = new Vector2(this.transform.position.x, lineStart.y - checkLength);
 		//linecast all objects that intersect above
-		RaycastHit2D[] hitAll = Physics2D.LinecastAll(lineStart, searchVector);
+		RaycastHit2D[] hitAll = Physics2D.LinecastAll(lineStart, searchVector, ~(1 << 8 | 1 << 5));
 		//debug for search line
 		Debug.DrawLine(lineStart, searchVector,Color.green);
 
@@ -645,7 +645,7 @@ public class PlayerController : MonoBehaviour
 		lineStart = new Vector2(this.transform.position.x - rend.bounds.size.x/4, this.transform.position.y - ((GetComponent<SpriteRenderer> ().sprite.rect.size.y * (transform.lossyScale.y / 2)) / 100) + 0.1f);
 		//end of seach line
 		searchVector = new Vector2(this.transform.position.x - rend.bounds.size.x/4, lineStart.y - checkLength);
-		RaycastHit2D[] hitAll2 = Physics2D.LinecastAll(lineStart, searchVector);
+		RaycastHit2D[] hitAll2 = Physics2D.LinecastAll(lineStart, searchVector, ~(1 << 8 | 1 << 5));
 		//debug for search line
 		Debug.DrawLine(lineStart, searchVector,Color.green);
 
@@ -654,7 +654,7 @@ public class PlayerController : MonoBehaviour
 		lineStart = new Vector2(this.transform.position.x + rend.bounds.size.x/4, this.transform.position.y - ((GetComponent<SpriteRenderer> ().sprite.rect.size.y * (transform.lossyScale.y / 2)) / 100) + 0.1f);
 		//end of seach line
 		searchVector = new Vector2(this.transform.position.x + rend.bounds.size.x/4, lineStart.y - checkLength);
-		RaycastHit2D[] hitAll3 = Physics2D.LinecastAll(lineStart, searchVector);
+		RaycastHit2D[] hitAll3 = Physics2D.LinecastAll(lineStart, searchVector, ~(1 << 8 | 1 << 5));
 		//debug for search line
 		Debug.DrawLine(lineStart, searchVector,Color.green);
 
@@ -692,12 +692,12 @@ public class PlayerController : MonoBehaviour
 
         Vector2 lineStart = new Vector2(this.transform.position.x - rend.bounds.extents.x - colliderThreshold, this.transform.position.y);
         Vector2 searchVector = new Vector2(lineStart.x - checkLength, this.transform.position.y);
-        RaycastHit2D hit = Physics2D.Linecast(lineStart, searchVector);
+        RaycastHit2D hit = Physics2D.Linecast(lineStart, searchVector, ~(1 << 8 | 1 << 5));
         Debug.DrawLine(lineStart, searchVector, Color.red);
 
 		lineStart = new Vector2(this.transform.position.x - rend.bounds.extents.x - colliderThreshold, this.transform.position.y - rend.bounds.size.y/3);
 		searchVector = new Vector2(lineStart.x - checkLength, this.transform.position.y - rend.bounds.size.y/3);
-		RaycastHit2D hit2 = Physics2D.Linecast(lineStart, searchVector);
+		RaycastHit2D hit2 = Physics2D.Linecast(lineStart, searchVector, ~(1 << 8 | 1 << 5));
 		Debug.DrawLine(lineStart, searchVector,Color.red);
 
 		return (hit || hit2);
@@ -711,12 +711,12 @@ public class PlayerController : MonoBehaviour
 
         Vector2 lineStart = new Vector2(this.transform.position.x + rend.bounds.extents.x + colliderThreshold, this.transform.position.y);
         Vector2 searchVector = new Vector2(lineStart.x + checkLength, this.transform.position.y);
-		RaycastHit2D hit = Physics2D.Linecast(lineStart, searchVector);
+		RaycastHit2D hit = Physics2D.Linecast(lineStart, searchVector, ~(1 << 8 | 1 << 5));
 		Debug.DrawLine (lineStart, searchVector, Color.red);
 
 		lineStart = new Vector2(this.transform.position.x + rend.bounds.extents.x + colliderThreshold, this.transform.position.y - rend.bounds.size.y/3);
 		searchVector = new Vector2(lineStart.x + checkLength, this.transform.position.y - rend.bounds.size.y/3);
-		RaycastHit2D hit2 = Physics2D.Linecast(lineStart, searchVector);
+		RaycastHit2D hit2 = Physics2D.Linecast(lineStart, searchVector, ~(1 << 8 | 1 << 5));
         Debug.DrawLine(lineStart, searchVector,Color.red);
 
 		return (hit || hit2);
