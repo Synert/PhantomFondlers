@@ -8,7 +8,6 @@ public class ExampleSword : WeaponPickup {
     {
         Transform newProjectile = Instantiate(projectile, GetOwner().transform.position, transform.rotation);
         newProjectile.GetComponent<Projectile>().SetOwner(GetOwner());
-        newProjectile.GetComponent<Projectile>().SetWeapon(gameObject);
         newProjectile.GetComponent<Projectile>().SetDamage(damage);
     }
 

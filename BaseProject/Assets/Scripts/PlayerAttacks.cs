@@ -268,4 +268,9 @@ public class PlayerAttacks : MonoBehaviour
     {
         canAttack = set;
     }
+
+    public bool CanAttack()
+    {
+        return canAttack;
+    }
 }
