@@ -40,12 +40,13 @@ public class PlayerController : MonoBehaviour
     public bool rightWallHit = false;
     public bool Jumping = false;
     //===== Data for buttonMashing ====//
-    public float arbitaryHealth = 0;
+	public float arbitaryHealth = 0;
 	public PlayerController ontopOf;
 	public float increaseCount = 0;
-	public float increaseWhenOntopCount = 0;
 	public float currentCount = 0;
+	public float currentEnemyCount = 0;
 	public float respawnCount = 100;
+	public float enemyKillCount = 100;
 	public float respawnHealth = 10;
     //=================================
     //====== Data for sprinting ======//
@@ -54,6 +55,14 @@ public class PlayerController : MonoBehaviour
 	//temp
 	public status stat;
 	public float animNeedsFinish = 0;
+	public GameObject ghostChild;
+	public GameObject XChild;
+	public int downMult = 0;
+	public int downs = 0;
+	public Rect counterOntop;
+	public Rect counterDowned;
+	public GameObject counterBox;
+	public GameObject counter;
 	//
 
     bool canDoubleJump = true;
@@ -75,9 +84,9 @@ public class PlayerController : MonoBehaviour
         anim = GetComponent<Animator>();
         rend = GetComponent<Renderer>();
 
-        originalSize = GetComponent<Collider2D>().bounds.size;
-        Vector2 temp = GetComponent<SpriteRenderer>().bounds.size;
-        GetComponent<Collider2D>().bounds.size.Set(temp.x, temp.y, 0);
+        //originalSize = GetComponent<Collider2D>().bounds.size;
+        //Vector2 temp = GetComponent<SpriteRenderer>().bounds.size;
+        //GetComponent<Collider2D>().bounds.size.Set(temp.x, temp.y, 0);
     }
 
 	//==============================================
@@ -85,22 +94,27 @@ public class PlayerController : MonoBehaviour
 	//needs to be polished but fundementals are done
 	public void takeDamage(int damage) {
 		if (!movementPause) {
-            arbitaryHealth -= damage;
+			arbitaryHealth -= damage;
 			if (arbitaryHealth <= 0)
-            {
-                stat = status.death;
-                anim.Play("death", 0);
-                animNeedsFinish = getAnimationTime("death");
-                //GetComponent<BoxCollider2D>().isTrigger = true;
-                GetComponent<Rigidbody2D>().mass = 100;
-                movementPause = true;
-                Vector2 temp = GetComponent<SpriteRenderer>().bounds.size;
-                GetComponent<Collider2D>().bounds.size.Set(temp.x, temp.y, 0);
-                playSound(3);
+			{
+				downs++;
+				stat = status.death;
+				anim.Play("death", 0);
+				animNeedsFinish = getAnimationTime("death", anim);
+				//GetComponent<BoxCollider2D>().isTrigger = true;
+				GetComponent<Rigidbody2D>().mass = 100;
+				movementPause = true;
+				Vector2 temp = GetComponent<SpriteRenderer>().bounds.size;
+				GetComponent<Collider2D>().bounds.size.Set(temp.x, temp.y, 0);
+				if (ontopOf) {
+					ontopOf.ontopOf = null;
+					ontopOf = null;
+				}
+				playSound(3);
 			} else
-            {
-                playSound(2);
-            }
+			{
+				playSound(2);
+			}
 		}
 	}
 
@@ -109,22 +123,38 @@ public class PlayerController : MonoBehaviour
 	//if health above 0 and above another
 	//if other health below 0 count down other
 	void buttonMash () {
+		XChild.GetComponent<xButtonAnim> ().animEnum = buttonAnim.pressed;
 		if (arbitaryHealth <= 0) {
 			GetComponent<Rigidbody2D> ().velocity = Vector2.zero;
-			if (ontopOf) {
-				currentCount += increaseWhenOntopCount;
-			} else {
+			if (currentCount < (respawnCount + (downMult * downs))) {
 				currentCount += increaseCount;
 			}
 			testHealth ();
 		} else {
 			if (ontopOf) {
 				if (ontopOf.arbitaryHealth <= 0) {
+					if (ghostChild.GetComponent<ghostAnimator> ().animEnum != ghostAnim.resurrect &&
+						ghostChild.GetComponent<ghostAnimator> ().animEnum != ghostAnim.disable) {
+						ghostChild.GetComponent<ghostAnimator> ().animEnum = ghostAnim.buttonMash;
+					}
 					GetComponent<Rigidbody2D> ().velocity = Vector2.zero;
 					movementPause = true;
-					ontopOf.currentCount -= increaseCount;
+					if (ontopOf.currentEnemyCount < ontopOf.enemyKillCount) {
+						ontopOf.currentEnemyCount += increaseCount;
+					}
 					ontopOf.testHealth ();
 				}
+			}
+		}
+	}
+
+	void exitButtonMash () {
+		if (ontopOf) {
+			if (arbitaryHealth > 0) {
+				ontopOf.ontopOf = null;
+				ontopOf = null;
+				movementPause = false;
+				//========================================ADD OTHER NEEDED DATA
 			}
 		}
 	}
@@ -133,29 +163,75 @@ public class PlayerController : MonoBehaviour
 	//below 0 or if currenCount is
 	//above respawn and take actions
 	public void testHealth() {
-		if (currentCount <= -1) {
+		if (currentEnemyCount >= enemyKillCount) {
 			ontopOf.movementPause = false;
 			ontopOf.ontopOf = null;
-			Destroy (this.gameObject);
-		} else if (currentCount >= respawnCount)
-        {
-            //GetComponent<BoxCollider2D>().isTrigger = false;
-            GetComponent<Rigidbody2D>().mass = 1;
-            movementPause = false;
-			arbitaryHealth = respawnHealth;
-			currentCount = 0;
+			XChild.gameObject.SetActive (false);
+			ontopOf.XChild.SetActive(false);
+			ontopOf = null;
+			//Destroy (this.gameObject);
+			if (ghostChild.GetComponent<ghostAnimator> ().animEnum != ghostAnim.die &&
+				ghostChild.GetComponent<ghostAnimator> ().animEnum != ghostAnim.dieDisable) {
+				ghostChild.GetComponent<ghostAnimator> ().animEnum = ghostAnim.die;
+			}
+		} else if (currentCount >= (respawnCount + (downMult * downs)))
+		{
+			if (ontopOf) {
+				ontopOf.movementPause = false;
+				ontopOf.ontopOf = null;
+				XChild.gameObject.SetActive (false);
+				ontopOf.XChild.SetActive(false);
+				ontopOf = null;
+			}
+			if (ghostChild.GetComponent<ghostAnimator> ().animEnum != ghostAnim.resurrect &&
+				ghostChild.GetComponent<ghostAnimator> ().animEnum != ghostAnim.disable) {
+				ghostChild.GetComponent<ghostAnimator> ().animEnum = ghostAnim.resurrect;
+			}
 		}
 	}
 
+	public void resurrect() {
+		stat = status.stationary;
+		GetComponent<Rigidbody2D> ().isKinematic = false;
+		GetComponent<BoxCollider2D> ().isTrigger = false;
+		GetComponent<Rigidbody2D>().mass = 1;
+		movementPause = false;
+		arbitaryHealth = respawnHealth;
+		currentCount = 0;
+	}
+
+	public void forceKill() {
+		Destroy (this.gameObject);
+	}
+
 	//if other has no ontop set ontop of other and self to required
-	void OnCollisionEnter2D (Collision2D _other) {
-        Collider2D other = _other.collider;
+	void OnTriggerEnter2D (Collider2D other) {
 		if (other.GetComponent<PlayerController> ()) {
 			if (other.GetComponent<PlayerController> ().arbitaryHealth <= 0) {
 				if (!movementPause) {
 					if (!other.GetComponent<PlayerController> ().ontopOf) {
 						ontopOf = other.GetComponent<PlayerController> ();
 						other.GetComponent<PlayerController> ().ontopOf = this;
+						XChild.gameObject.SetActive (true);
+						other.GetComponent<PlayerController> ().XChild.SetActive(true);
+					}
+				}
+			}
+		}
+	}
+
+	//if other has no ontop set ontop of other and self to required
+	void OnTriggerStay2D (Collider2D other) {
+		if (other.GetComponent<PlayerController> ()) {
+			if (other.GetComponent<PlayerController> ().arbitaryHealth <= 0) {
+				if (!movementPause) {
+					if (!other.GetComponent<PlayerController> ().ontopOf) {
+						if (!ontopOf) {
+							ontopOf = other.GetComponent<PlayerController> ();
+							other.GetComponent<PlayerController> ().ontopOf = this;
+							XChild.gameObject.SetActive (true);
+							other.GetComponent<PlayerController> ().XChild.SetActive (true);
+						}
 					}
 				}
 			}
@@ -163,13 +239,17 @@ public class PlayerController : MonoBehaviour
 	}
 
 	//if other has ontop set ontop of other and self to required
-	void OnCollisionExit2D(Collision2D _other)
-    {
-        Collider2D other = _other.collider;
-        if (other.GetComponent<PlayerController> ()) {
-			if (ontopOf == this) {
-				if (other.GetComponent<PlayerController> ().ontopOf) {
-					ontopOf = null;
+	void OnTriggerExit2D (Collider2D other)
+	{
+		if (other.GetComponent<PlayerController> ()) {
+			if (other.GetComponent<PlayerController> ().ontopOf) {
+				if (other.GetComponent<PlayerController> ().ontopOf == this) {
+					if (ontopOf) {
+						ontopOf.currentEnemyCount = 0;
+						ontopOf = null;
+					}
+					XChild.gameObject.SetActive (false);
+					other.GetComponent<PlayerController> ().XChild.gameObject.SetActive (false);
 					other.GetComponent<PlayerController> ().ontopOf = null;
 				}
 			}
@@ -260,80 +340,6 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    //   void jump() {
-    //	if (!movementPause) {
-    //		if (!keyPressDown) {
-    //			keyPressDown = true;
-    //			if (isOnGround || (canDoubleJump && enableDoubleJump || wallHitJump && enableWallJump)) {
-    //				bool wallHit = false;
-    //				int wallHitDirection = 0;
-
-    //				leftWallHit = onLeftWall ();
-    //				rightWallHit = onRightWall ();
-
-    //                   if (isOnGround || (canDoubleJump && enableDoubleJump) || leftWallHit || rightWallHit)
-    //                   {
-    //                       if (isOnGround == true)
-    //                       {
-    //                           //Jumping from ground
-    //                           playSound(0, 1.25f);
-    //                           anim.SetInteger("State", 3);
-    //                       }
-    //                       else if (!isOnGround && !(leftWallHit || rightWallHit))
-    //                       {
-    //                           //Double jump
-    //                           playSound(0, 0.5f);
-    //                           anim.SetInteger("State", 3);
-    //                       }
-    //                       else
-    //                       {
-    //                           Debug.Log("JUMPING FROM WALL");
-    //                           //Jumping from wall
-    //                           JumpingFromWall = true;
-    //                           anim.SetInteger("State", 6);
-    //                           playSound(0, 0.7f);
-    //                       }
-    //                   }
-
-    //                   if (horizontal) {
-    //					if (leftWallHit && enableWallJump) {
-    //                           wallHit = true;
-    //						wallHitDirection = 1;
-    //					} else if (rightWallHit && enableWallJump) {
-
-    //                           wallHit = true;
-    //						wallHitDirection = -1;
-    //					}
-    //				}
-
-    //				if (!wallHit) {
-    //					if (isOnGround || (canDoubleJump && enableDoubleJump)) {
-    //                           GetComponent<Rigidbody2D> ().velocity = new Vector2 (GetComponent<Rigidbody2D> ().velocity.x, this.jumpSpeed);
-    //						jumpDuration = 0.0f;
-    //						canDoubleJump = true;
-    //					}
-    //				} else {
-
-    //					GetComponent<Rigidbody2D> ().velocity = new Vector2 (this.jumpSpeed * wallHitDirection, this.jumpSpeed);
-    //                       jmpDuration = 0.0f;
-    //					canJumpVariable = true;
-    //				}
-
-    //				if (!isOnGround && !wallHit) {
-    //					canDoubleJump = false;
-    //				}
-    //			}
-    //		} else if (canJumpVariable) {
-    //			jmpDuration += Time.deltaTime;
-
-    //			if (jmpDuration < this.jumpDuration / 1000) {
-    //				GetComponent<Rigidbody2D> ().velocity = new Vector2 (GetComponent<Rigidbody2D> ().velocity.x, this.jumpSpeed);
-    //			}
-    //		}
-    //	}
-    //}
-
-
     // Update is called once per frame
 
 	void jump() {
@@ -393,7 +399,7 @@ public class PlayerController : MonoBehaviour
 								playSound (0, 0.7f);
 								//anim.SetInteger ("State", 6);
 								anim.Play ("WallJump" , 0);
-								animNeedsFinish = getAnimationTime("WallJump") * 2;
+								animNeedsFinish = getAnimationTime("WallJump");
 								stat = status.wallJump;
 								GetComponent<Rigidbody2D> ().velocity = new Vector2 (this.jumpSpeed * wallHitDirection, this.jumpSpeed);
 								jmpDuration = 0.0f;
@@ -417,125 +423,12 @@ public class PlayerController : MonoBehaviour
 		}
 	}
 
-    /*void jump()
-    {
-        if (!movementPause)
-        {
-            if (!keyPressDown)
-            {
-
-                keyPressDown = true;
-                if (isOnGround || (canDoubleJump && enableDoubleJump || wallHitJump && enableWallJump))
-                {
-                    bool wallHit = false;
-                    int wallHitDirection = 0;
-
-                    if (isOnGround || (canDoubleJump && enableDoubleJump) || leftWall || rightWall)
-                    {
-                        if (isOnGround == true)
-                        {
-                           
-                            playSound(0, 1.25f);//SOund
-                        }
-                        else if (!isOnGround && !(leftWall || rightWall))
-                        {
-                            
-                            playSound(0, 0.5f);
-                        }
-                        else
-                        {
-                      
-                            playSound(0, 0.7f);
-                        }
-                    }
-
-                    if (leftWall || rightWall)
-                    {
-                        wallHit = true;
-                    }
-
-                    if (horizontal)
-                    {
-                        if (wallHit)
-                        {
-                            if (enableWallJump)
-                            {
-                                if (leftWall)
-                                {
-                                    wallHitDirection = 1;
-                                }
-                                else if (rightWall)
-                                {
-                                    wallHitDirection = -1;
-                                }
-                            }
-                        }
-                    }
-
-                    if (!wallHit)
-                    {
-                        if (isOnGround || (canDoubleJump && enableDoubleJump))
-                        {
-                            anim.SetInteger("State", 3);
-                            GetComponent<Rigidbody2D>().velocity = new Vector2(GetComponent<Rigidbody2D>().velocity.x, this.jumpSpeed);
-                            jumpDuration = 0.0f;
-                            Jumping = true;
-                            canDoubleJump = true;
-                        }
-                    }
-                    else
-                    {
-                        if (isOnGround)
-                        {
-                            anim.SetInteger("State", 3);
-                            GetComponent<Rigidbody2D>().velocity = new Vector2(GetComponent<Rigidbody2D>().velocity.x, this.jumpSpeed);
-                            jmpDuration = 0.0f;
-                            canJumpVariable = true;
-                            Jumping = true;
-                        }
-                        else
-                        {
-                            if (wallHitDirection != 0)
-                            {
-                                anim.SetInteger("State", 6);
-                                Jumping = true;
-                                GetComponent<Rigidbody2D>().velocity = new Vector2(this.jumpSpeed * wallHitDirection, this.jumpSpeed);
-                                jmpDuration = 0.0f;
-                                canJumpVariable = true;
-                            }
-                            else
-                            {
-                               
-                            }
-                        }
-
-
-                    }
-
-                    if (!isOnGround && !wallHit)
-                    {
-                        canDoubleJump = false;
-                    }
-                }
-            }
-            else if (canJumpVariable)
-            {
-                jmpDuration += Time.deltaTime;
-
-                if (jmpDuration < this.jumpDuration / 1000)
-                {
-                    GetComponent<Rigidbody2D>().velocity = new Vector2(GetComponent<Rigidbody2D>().velocity.x, this.jumpSpeed);
-                }
-            }
-        }
-    } */
-
 	void Update ()
 	{
         GetComponent<SpriteRenderer>().color = playerColor;
         m_attack.SetColor(playerColor);
-        Vector2 temp = GetComponent<SpriteRenderer>().bounds.size;
-        GetComponent<Collider2D>().bounds.size.Set(temp.x, temp.y, 0);
+        //Vector2 temp = GetComponent<SpriteRenderer>().bounds.size;
+        //GetComponent<Collider2D>().bounds.size.Set(temp.x, temp.y, 0);
         leftWall = onLeftWall ();
 		rightWall = onRightWall ();
 		isOnGround = onGround();
@@ -545,8 +438,6 @@ public class PlayerController : MonoBehaviour
 				anim.Play ("Dodging", 0, 1);
                 animNeedsFinish = getAnimationTime("Dodging");
                 stat = status.dashing;
-			} else {
-
 			}
 		} else {
 			if (stat == status.dashing) {
@@ -562,12 +453,12 @@ public class PlayerController : MonoBehaviour
 			animNeedsFinish -= Time.deltaTime;
 		} else {
 			if (!isOnGround) {
-				if (leftWall || rightWall) {
-					stat = status.slidingOnWall;
-				}
-                else if (stat != status.death)
-                {
-					stat = status.falling;
+				if (stat != status.death && stat != status.deathAnim) {
+					if (leftWall || rightWall) {
+						stat = status.slidingOnWall;
+					} else {
+						stat = status.falling;
+					}
 				}
 			}
 		}
@@ -575,19 +466,43 @@ public class PlayerController : MonoBehaviour
 		if (stat == status.slidingOnWall) {
 			//activate sliding anim
 			anim.Play ("wallToRightWallSlide" , 0);
-            //anim.SetInteger("State", 5);
-            stat = status.slidingOnWall;
+			//anim.SetInteger("State", 5);
+			stat = status.slidingOnWall;
 		} else if (stat == status.falling) {
 			//activate falling anim
 			anim.Play ("Falling" , 0);
 			//anim.SetInteger("State", 3);
 			stat = status.falling;
-		} else if(stat == status.death)
-        {
-            anim.Play("death", 0);
-            stat = status.death;
-        }
+		} else if(stat == status.death || stat == status.deathAnim)
+		{
+			anim.Play("death", 0);
+		}
         
+		//handle death positioning
+		if (stat == status.death) {
+			if (isOnGround) {
+				GetComponent<Rigidbody2D> ().velocity = Vector2.zero;
+				GetComponent<Rigidbody2D> ().isKinematic = true;
+				GetComponent<BoxCollider2D> ().isTrigger = true;
+				transform.position -= new Vector3 (0, 0.6f, 0);
+				Vector3 localScale = ghostChild.transform.localScale;
+				if (!facingRight) {
+					ghostChild.transform.position = new Vector3 (transform.position.x + 0.9f, ghostChild.transform.position.y, transform.position.z);
+					XChild.transform.position = new Vector3 (transform.position.x - 0.9f, ghostChild.transform.position.y, transform.position.z);
+					localScale.x = Mathf.Abs (ghostChild.transform.localScale.x);
+				} else {
+					localScale.x = ghostChild.transform.localScale.x;
+					XChild.transform.position = new Vector3 (transform.position.x + 0.9f, ghostChild.transform.position.y, transform.position.z);
+					ghostChild.transform.position = new Vector3 (transform.position.x - 0.9f, ghostChild.transform.position.y, transform.position.z);
+				}
+				ghostChild.transform.localScale = localScale;
+				ghostChild.SetActive (true);
+				ghostChild.GetComponent<ghostAnimator> ().animEnum = ghostAnim.appear;
+				stat = status.deathAnim;
+			}
+		} else if (stat != status.death && stat != status.deathAnim) {
+			XChild.transform.position = new Vector3 (transform.position.x, transform.position.y + 1.25f, transform.position.z);
+		}
 
 		if (isOnGround) {
 			if (GetComponent<Rigidbody2D> ().velocity.y <= 0) {
@@ -602,7 +517,7 @@ public class PlayerController : MonoBehaviour
 			}
 		}
 
-		if (horizontal == false && isOnGround && !isDashing && stat != status.death)
+		if (horizontal == false && isOnGround && !isDashing && (stat != status.death && stat != status.deathAnim))
 		{
 			//idle
 			if (Mathf.Abs(GetComponent<Rigidbody2D> ().velocity.x) < 0.2f || stat == status.falling) {
@@ -612,11 +527,29 @@ public class PlayerController : MonoBehaviour
 			}
 		}
 
+		//draw health ui
+		if (ontopOf) {
+			counterBox.SetActive (true);
+			counter.SetActive (true);
+			if (arbitaryHealth <= 0) {
+				drawCounterBar (currentCount, respawnCount + (downMult * downs), counterDowned);
+			} else {
+				drawCounterBar (ontopOf.currentEnemyCount, ontopOf.enemyKillCount, counterOntop);
+			}
+		} else if (arbitaryHealth <= 0) {
+			counterBox.SetActive (true);
+			counter.SetActive (true);
+			drawCounterBar (currentCount, respawnCount + (downMult * downs), counterDowned);
+		} else {
+			counterBox.SetActive (false);
+			counter.SetActive (false);
+		}
+
 		horizontal = false;
 		keyPressDown = false;
 		canJumpVariable = false;
 
-        if (stat == status.dodging || stat == status.slidingOnWall || stat == status.wallJump || stat == status.dashing)
+		if (stat == status.dodging || stat == status.slidingOnWall || stat == status.wallJump || stat == status.dashing || stat == status.death  || stat == status.deathAnim)
         {
             m_attack.SetAttackEnabled(false);
         }
@@ -626,102 +559,104 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    private bool onGround()
-    {
+	void drawCounterBar(float current, float max, Rect _rect) {
+		Vector3 pos = new Vector3(_rect.position.x,_rect.position.y, 0);
+
+		counterBox.transform.position = pos + transform.position;
+		counterBox.transform.localScale = new Vector3 (_rect.size.x, _rect.size.y, 1);
+		pos -= new Vector3 (0, 0, 1);
+		counter.transform.position = pos + transform.position;
+		counter.transform.localScale = new Vector3 ((_rect.size.x * ((current + 1)/max)) - 0.1f, _rect.size.y - 0.1f, 1);
+
+		//GUI.Box (new Rect(pos + _rect.position, _rect.size), counter);
+		//GUI.Box(new Rect(pos + _rect.position, new Vector2(_rect.size.x * (max/current),_rect.size.y)), GUIContent.none);
+	}
+
+	private bool onGround()
+	{
 		//arbitary length for search
-        float checkLength = 0.5f;
+		Vector3 size = GetComponent<Collider2D> ().bounds.size;
 
 		//bottom of players position (not relative to rotation)
-		Vector2 lineStart = new Vector2(this.transform.position.x, this.transform.position.y - ((GetComponent<SpriteRenderer> ().sprite.rect.size.y * (transform.lossyScale.y / 2)) / 100) + 0.1f);
+		Vector2 lineStart = new Vector2(this.transform.position.x - (size.x/2) + 0.1f, this.transform.position.y - (size.y/2) - 0.1f);
+
 		//end of seach line
-        Vector2 searchVector = new Vector2(this.transform.position.x, lineStart.y - checkLength);
+		Vector2 searchVector = new Vector2(this.transform.position.x + (size.x/2) - 0.1f, this.transform.position.y - (size.y/2) - 0.1f);
+
 		//linecast all objects that intersect above
-		RaycastHit2D[] hitAll = Physics2D.LinecastAll(lineStart, searchVector, ~(1 << 8 | 1 << 5));
+		RaycastHit2D[] hit = Physics2D.LinecastAll(lineStart, searchVector);
+
 		//debug for search line
 		Debug.DrawLine(lineStart, searchVector,Color.green);
 
-
-		//bottom of players position (not relative to rotation)
-		lineStart = new Vector2(this.transform.position.x - rend.bounds.size.x/4, this.transform.position.y - ((GetComponent<SpriteRenderer> ().sprite.rect.size.y * (transform.lossyScale.y / 2)) / 100) + 0.1f);
-		//end of seach line
-		searchVector = new Vector2(this.transform.position.x - rend.bounds.size.x/4, lineStart.y - checkLength);
-		RaycastHit2D[] hitAll2 = Physics2D.LinecastAll(lineStart, searchVector, ~(1 << 8 | 1 << 5));
-		//debug for search line
-		Debug.DrawLine(lineStart, searchVector,Color.green);
-
-
-		//bottom of players position (not relative to rotation)
-		lineStart = new Vector2(this.transform.position.x + rend.bounds.size.x/4, this.transform.position.y - ((GetComponent<SpriteRenderer> ().sprite.rect.size.y * (transform.lossyScale.y / 2)) / 100) + 0.1f);
-		//end of seach line
-		searchVector = new Vector2(this.transform.position.x + rend.bounds.size.x/4, lineStart.y - checkLength);
-		RaycastHit2D[] hitAll3 = Physics2D.LinecastAll(lineStart, searchVector, ~(1 << 8 | 1 << 5));
-		//debug for search line
-		Debug.DrawLine(lineStart, searchVector,Color.green);
-
-
 		//loop through all hits and return first object that isn't self
-		foreach (RaycastHit2D hi in hitAll) {
+		foreach (RaycastHit2D hi in hit) {
 			if (hi.transform != transform) {
-				return true;
-			}
-		}
-
-		//loop through all hits and return first object that isn't self
-		foreach (RaycastHit2D hi in hitAll2) {
-			if (hi.transform != transform) {
-				return true;
-			}
-		}
-
-		//loop through all hits and return first object that isn't self
-		foreach (RaycastHit2D hi in hitAll3) {
-			if (hi.transform != transform) {
-				return true;
+				if (hi.transform.tag == "Player") {
+					if (!hi.transform.GetComponent<PlayerController> ().movementPause) {
+						return true;
+					}
+				} else {
+					return true;
+				}
 			}
 		}
 
 		//return false if hit doesn't exists
 		return false;
-    }
+	}
 
-    private bool onLeftWall()
-    {
+	private bool onLeftWall()
+	{
+		Vector3 size = GetComponent<Collider2D> ().bounds.size;
 
-        float checkLength = 0.3f;
-        float colliderThreshold = 0.1f;
-
-        Vector2 lineStart = new Vector2(this.transform.position.x - rend.bounds.extents.x - colliderThreshold, this.transform.position.y);
-        Vector2 searchVector = new Vector2(lineStart.x - checkLength, this.transform.position.y);
-        RaycastHit2D hit = Physics2D.Linecast(lineStart, searchVector, ~(1 << 8 | 1 << 5));
-        Debug.DrawLine(lineStart, searchVector, Color.red);
-
-		lineStart = new Vector2(this.transform.position.x - rend.bounds.extents.x - colliderThreshold, this.transform.position.y - rend.bounds.size.y/3);
-		searchVector = new Vector2(lineStart.x - checkLength, this.transform.position.y - rend.bounds.size.y/3);
-		RaycastHit2D hit2 = Physics2D.Linecast(lineStart, searchVector, ~(1 << 8 | 1 << 5));
+		Vector2 lineStart = new Vector2(this.transform.position.x - (size.x/2) - 0.1f, this.transform.position.y + (size.y/4));
+		Vector2 searchVector = new Vector2(this.transform.position.x - (size.x/2) - 0.1f, this.transform.position.y - (size.y/2) + 0.1f);
+		RaycastHit2D[] hit = Physics2D.LinecastAll(lineStart, searchVector);
 		Debug.DrawLine(lineStart, searchVector,Color.red);
 
-		return (hit || hit2);
-    }
+		//loop through all hits and return first object that isn't self
+		foreach (RaycastHit2D hi in hit) {
+			if (hi.transform != transform) {
+				if (hi.transform.tag == "Player") {
+					if (!hi.transform.GetComponent<PlayerController> ().movementPause) {
+						return true;
+					}
+				} else {
+					return true;
+				}
+			}
+		}
 
-    private bool onRightWall()
-    {
-       
-        float checkLength = 0.3f;
-        float colliderThreshold = 0.1f;
+		return false;
+	}
 
-        Vector2 lineStart = new Vector2(this.transform.position.x + rend.bounds.extents.x + colliderThreshold, this.transform.position.y);
-        Vector2 searchVector = new Vector2(lineStart.x + checkLength, this.transform.position.y);
-		RaycastHit2D hit = Physics2D.Linecast(lineStart, searchVector, ~(1 << 8 | 1 << 5));
-		Debug.DrawLine (lineStart, searchVector, Color.red);
+	private bool onRightWall()
+	{
 
-		lineStart = new Vector2(this.transform.position.x + rend.bounds.extents.x + colliderThreshold, this.transform.position.y - rend.bounds.size.y/3);
-		searchVector = new Vector2(lineStart.x + checkLength, this.transform.position.y - rend.bounds.size.y/3);
-		RaycastHit2D hit2 = Physics2D.Linecast(lineStart, searchVector, ~(1 << 8 | 1 << 5));
-        Debug.DrawLine(lineStart, searchVector,Color.red);
+		Vector3 size = GetComponent<Collider2D> ().bounds.size;
 
-		return (hit || hit2);
+		Vector2 lineStart = new Vector2(this.transform.position.x + (size.x/2) + 0.1f, this.transform.position.y + (size.y/4));
+		Vector2 searchVector = new Vector2(this.transform.position.x + (size.x/2) + 0.1f, this.transform.position.y - (size.y/2) + 0.1f);
+		RaycastHit2D[] hit = Physics2D.LinecastAll(lineStart, searchVector);
+		Debug.DrawLine(lineStart, searchVector,Color.red);
 
-    }
+		//loop through all hits and return first object that isn't self
+		foreach (RaycastHit2D hi in hit) {
+			if (hi.transform != transform) {
+				if (hi.transform.tag == "Player") {
+					if (!hi.transform.GetComponent<PlayerController> ().movementPause) {
+						return true;
+					}
+				} else {
+					return true;
+				}
+			}
+		}
+
+		return false;
+
+	}
 
     public void playSound(int _clip, float defaultVal = 1, float defaultSound = 0.1f)
     {
@@ -753,6 +688,16 @@ public class PlayerController : MonoBehaviour
 		return 0;
 	}
 
+	static public float getAnimationTime(string animName, Animator anim) {
+		RuntimeAnimatorController animController = anim.runtimeAnimatorController;
+		for (int a = 0; a < animController.animationClips.Length; a++) {
+			if (animController.animationClips [a].name == animName) {
+				return animController.animationClips [a].length;
+			}
+		}
+		return 0;
+	}
+
 }
 
 public enum status
@@ -766,5 +711,6 @@ public enum status
 	wallJump,
 	death,
 	falling,
-	dashing
+	dashing,
+	deathAnim
 }
