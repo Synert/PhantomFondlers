@@ -16,6 +16,8 @@ public class PlayerController : MonoBehaviour
 	public bool isOnGround = false;
 	public float slowDownSpeed;
 
+    public int playerNumber;
+
     public Color playerColor = Color.white;
 
     //===== Data for Animation ====//
@@ -65,8 +67,12 @@ public class PlayerController : MonoBehaviour
 	public GameObject counter;
 	//
 
+
+
     bool canDoubleJump = true;
     float jmpDuration;
+
+    float endTimer = 5.0f;
 
     bool keyPressDown = false;
     bool canJumpVariable = false; 
@@ -83,6 +89,11 @@ public class PlayerController : MonoBehaviour
         facingRight = true;
         anim = GetComponent<Animator>();
         rend = GetComponent<Renderer>();
+
+        if (!FindObjectOfType<PlayerInGame>().playerExists[playerNumber])
+        {
+            forceKill();
+        }
 
         //originalSize = GetComponent<Collider2D>().bounds.size;
         //Vector2 temp = GetComponent<SpriteRenderer>().bounds.size;
@@ -425,6 +436,16 @@ public class PlayerController : MonoBehaviour
 
 	void Update ()
 	{
+        //check enemies
+        if(FindObjectsOfType<PlayerController>().Length < 2)
+        {
+            endTimer -= Time.deltaTime;
+            if(endTimer <= 0.0f)
+            {
+                SceneManager.LoadScene("Main Menu");
+            }
+        }
+
         GetComponent<SpriteRenderer>().color = playerColor;
         m_attack.SetColor(playerColor);
         //Vector2 temp = GetComponent<SpriteRenderer>().bounds.size;

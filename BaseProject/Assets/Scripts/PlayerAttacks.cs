@@ -6,7 +6,6 @@ public class PlayerAttacks : MonoBehaviour
 {
     Transform m_weapon = null;
     public Transform m_duster;
-    int playerNumber = 1;
     float cooldown = 0.0f;
     bool attacking = false;
     int quad = 0;
@@ -27,6 +26,7 @@ public class PlayerAttacks : MonoBehaviour
             m_weapon.GetComponentInChildren<WeaponPickup>().SetOwner(gameObject);
         }
         m_duster.GetComponentInChildren<WeaponPickup>().SetOwner(gameObject);
+        m_duster.transform.Rotate(new Vector3(0.0f, 0.0f, -90.0f));
     }
 
     void grabInputs(variableData _var)
@@ -219,11 +219,6 @@ public class PlayerAttacks : MonoBehaviour
         Destroy(new_weapon.gameObject);
 
         m_weapon.GetComponent<WeaponPickup>().SetOwner(gameObject);
-    }
-
-    public void SetPlayerNumber(int set)
-    {
-        playerNumber = set;
     }
 
     int GetQuadrant(float angle, float size)
