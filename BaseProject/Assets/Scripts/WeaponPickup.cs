@@ -14,7 +14,7 @@ public class WeaponPickup : MonoBehaviour
     GameObject owner;
     bool held = false;
     public float powerCap;
-    bool doneDamage = false;
+    bool doneDamage = true;
 
     public enum DIRECTION
     {
