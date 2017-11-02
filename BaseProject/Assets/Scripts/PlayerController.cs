@@ -144,9 +144,12 @@ public class PlayerController : MonoBehaviour
 		} else {
 			if (ontopOf) {
 				if (ontopOf.arbitaryHealth <= 0) {
-					if (ghostChild.GetComponent<ghostAnimator> ().animEnum != ghostAnim.resurrect &&
-						ghostChild.GetComponent<ghostAnimator> ().animEnum != ghostAnim.disable) {
-						ghostChild.GetComponent<ghostAnimator> ().animEnum = ghostAnim.buttonMash;
+                    anim.Play("Tickling", 0);
+                    animNeedsFinish = getAnimationTime("Tickling");
+                    stat = status.tickling;
+                    if (ontopOf.ghostChild.GetComponent<ghostAnimator> ().animEnum != ghostAnim.resurrect &&
+                        ontopOf.ghostChild.GetComponent<ghostAnimator> ().animEnum != ghostAnim.disable) {
+                        ontopOf.ghostChild.GetComponent<ghostAnimator> ().animEnum = ghostAnim.buttonMash;
 					}
 					GetComponent<Rigidbody2D> ().velocity = Vector2.zero;
 					movementPause = true;
@@ -466,7 +469,7 @@ public class PlayerController : MonoBehaviour
 			}
 		}
 
-		if (!isOnGround && (stat == status.slidingOnWall || stat == status.wallJump || stat == status.standingJump) && (animNeedsFinish <= 0)) {
+		if (!isOnGround && (stat == status.slidingOnWall || stat == status.wallJump || stat == status.standingJump || stat == status.tickling) && (animNeedsFinish <= 0)) {
 			stat = status.falling;
 		}
 
@@ -481,10 +484,24 @@ public class PlayerController : MonoBehaviour
 						stat = status.falling;
 					}
 				}
-			}
+			} else
+            {
+                if (stat == status.tickling)
+                {
+                    //stat 
+                }
+            }
 		}
 
-		if (stat == status.slidingOnWall) {
+        //if (ontopOf && animNeedsFinish <= 0)
+        //{
+          //  if (stat == status.tickling)
+          //  {
+            //    stat = status.stationary;
+            //}
+        //}
+
+        if (stat == status.slidingOnWall) {
 			//activate sliding anim
 			anim.Play ("wallToRightWallSlide" , 0);
 			//anim.SetInteger("State", 5);
@@ -538,7 +555,7 @@ public class PlayerController : MonoBehaviour
 			}
 		}
 
-		if (horizontal == false && isOnGround && !isDashing && (stat != status.death && stat != status.deathAnim))
+		if (horizontal == false && isOnGround && !isDashing && (stat != status.death && stat != status.deathAnim) && stat != status.tickling)
 		{
 			//idle
 			if (Mathf.Abs(GetComponent<Rigidbody2D> ().velocity.x) < 0.2f || stat == status.falling) {
@@ -733,5 +750,6 @@ public enum status
 	death,
 	falling,
 	dashing,
-	deathAnim
+	deathAnim,
+    tickling
 }
