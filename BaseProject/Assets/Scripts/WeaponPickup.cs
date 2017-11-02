@@ -71,7 +71,7 @@ public class WeaponPickup : MonoBehaviour
                 {
                     PlayerAttacks player = col.GetComponentInChildren<PlayerAttacks>();
 
-                    if (GetOwner() == null && player.CanAttack())
+                    if (GetOwner() == null && player.CanAttack() && !player.HasWeapon())
                     {
                         player.SwitchWeapon(transform);
                     }
@@ -164,5 +164,10 @@ public class WeaponPickup : MonoBehaviour
     public GameObject GetOwner()
     {
         return owner;
+    }
+
+    public void SetAttacking(bool set)
+    {
+        doneDamage = !set;
     }
 }

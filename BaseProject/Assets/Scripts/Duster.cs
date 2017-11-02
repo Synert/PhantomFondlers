@@ -18,8 +18,9 @@ public class Duster : WeaponPickup {
         }
         else
         {
-           GetComponentsInChildren<BoxCollider2D>()[1].enabled = false;
+            GetComponentsInChildren<BoxCollider2D>()[1].enabled = false;
             GetComponentInChildren<Animator>().Play("FeatherDusterIdle", 0);
+            SetAttacking(false);
         }
     }
 

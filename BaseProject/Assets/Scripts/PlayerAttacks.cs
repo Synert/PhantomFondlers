@@ -283,4 +283,9 @@ public class PlayerAttacks : MonoBehaviour
             }
         }
     }
+
+    public bool HasWeapon()
+    {
+        return !(m_weapon == null);
+    }
 }
