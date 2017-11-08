@@ -90,10 +90,14 @@ public class PlayerController : MonoBehaviour
         anim = GetComponent<Animator>();
         rend = GetComponent<Renderer>();
 
-        if (!FindObjectOfType<PlayerInGame>().playerExists[playerNumber])
-        {
-            forceKill();
-        }
+		if (FindObjectOfType<PlayerInGame> ()) {
+			if (!FindObjectOfType<PlayerInGame> ().playerExists [playerNumber]) {
+				forceKill ();
+			}
+		} else {
+			forceKill ();
+			Debug.Log ("Could not find PlayerInGame");
+		}
 
         //originalSize = GetComponent<Collider2D>().bounds.size;
         //Vector2 temp = GetComponent<SpriteRenderer>().bounds.size;
@@ -104,27 +108,27 @@ public class PlayerController : MonoBehaviour
 	//Deal with buttonMashing to revive/tickle to death
 	//needs to be polished but fundementals are done
 	public void takeDamage(int damage) {
-		if (!movementPause && stat != status.dodging && stat != status.dashing) {
-			arbitaryHealth -= damage;
-			if (arbitaryHealth <= 0)
-			{
-				downs++;
-				stat = status.death;
-				anim.Play("death", 0);
-				animNeedsFinish = getAnimationTime("death", anim);
-				//GetComponent<BoxCollider2D>().isTrigger = true;
-				GetComponent<Rigidbody2D>().mass = 100;
-				movementPause = true;
-				Vector2 temp = GetComponent<SpriteRenderer>().bounds.size;
-				GetComponent<Collider2D>().bounds.size.Set(temp.x, temp.y, 0);
-				if (ontopOf) {
-					ontopOf.ontopOf = null;
-					ontopOf = null;
+		if (stat != status.death && stat != status.deathAnim) {
+			if (!movementPause && stat != status.dodging && stat != status.dashing) {
+				arbitaryHealth -= damage;
+				if (arbitaryHealth <= 0) {
+					downs++;
+					stat = status.death;
+					anim.Play ("death", 0);
+					animNeedsFinish = getAnimationTime ("death", anim);
+					//GetComponent<BoxCollider2D>().isTrigger = true;
+					GetComponent<Rigidbody2D> ().mass = 100;
+					movementPause = true;
+					Vector2 temp = GetComponent<SpriteRenderer> ().bounds.size;
+					GetComponent<Collider2D> ().bounds.size.Set (temp.x, temp.y, 0);
+					if (ontopOf) {
+						ontopOf.ontopOf = null;
+						ontopOf = null;
+					}
+					playSound (3);
+				} else {
+					playSound (2);
 				}
-				playSound(3);
-			} else
-			{
-				playSound(2);
 			}
 		}
 	}
@@ -144,15 +148,16 @@ public class PlayerController : MonoBehaviour
 		} else {
 			if (ontopOf) {
 				if (ontopOf.arbitaryHealth <= 0) {
-                    anim.Play("Tickling", 0);
-                    animNeedsFinish = getAnimationTime("Tickling");
-                    stat = status.tickling;
-                    if (ontopOf.ghostChild.GetComponent<ghostAnimator> ().animEnum != ghostAnim.resurrect &&
-                        ontopOf.ghostChild.GetComponent<ghostAnimator> ().animEnum != ghostAnim.disable) {
-                        ontopOf.ghostChild.GetComponent<ghostAnimator> ().animEnum = ghostAnim.buttonMash;
+					if (ontopOf.XChild.activeSelf) {
+						anim.Play ("Tickling", 0);
+						animNeedsFinish = getAnimationTime ("Tickling");
+						stat = status.tickling;
+						movementPause = true;
+						GetComponent<Rigidbody2D> ().velocity = Vector2.zero;
 					}
-					GetComponent<Rigidbody2D> ().velocity = Vector2.zero;
-					movementPause = true;
+					if (ontopOf.ghostChild.GetComponent<ghostAnimator> ().animEnum == ghostAnim.idle) {
+						ontopOf.ghostChild.GetComponent<ghostAnimator> ().animEnum = ghostAnim.buttonMash;
+					}
 					if (ontopOf.currentEnemyCount < ontopOf.enemyKillCount) {
 						ontopOf.currentEnemyCount += increaseCount;
 					}
@@ -165,10 +170,12 @@ public class PlayerController : MonoBehaviour
 	void exitButtonMash () {
 		if (ontopOf) {
 			if (arbitaryHealth > 0) {
+				ontopOf.currentEnemyCount = 0;
 				ontopOf.ontopOf = null;
 				ontopOf = null;
 				movementPause = false;
-				//========================================ADD OTHER NEEDED DATA
+				XChild.gameObject.SetActive (false);
+				stat = status.stationary;
 			}
 		}
 	}
@@ -177,20 +184,29 @@ public class PlayerController : MonoBehaviour
 	//below 0 or if currenCount is
 	//above respawn and take actions
 	public void testHealth() {
-		if (currentEnemyCount >= enemyKillCount) {
+		if (currentEnemyCount >= enemyKillCount &&
+				(ghostChild.GetComponent<ghostAnimator> ().animEnum != ghostAnim.die &&
+				ghostChild.GetComponent<ghostAnimator> ().animEnum != ghostAnim.dieDisable)) {
+			Debug.Log (ghostChild.GetComponent<ghostAnimator> ().animEnum);
 			ontopOf.movementPause = false;
 			ontopOf.ontopOf = null;
 			XChild.gameObject.SetActive (false);
 			ontopOf.XChild.SetActive(false);
+			ontopOf.anim.Play ("Idle", 0);
+			ontopOf.stat = status.stationary;
 			ontopOf = null;
 			//Destroy (this.gameObject);
 			if (ghostChild.GetComponent<ghostAnimator> ().animEnum != ghostAnim.die &&
 				ghostChild.GetComponent<ghostAnimator> ().animEnum != ghostAnim.dieDisable) {
 				ghostChild.GetComponent<ghostAnimator> ().animEnum = ghostAnim.die;
 			}
-		} else if (currentCount >= (respawnCount + (downMult * downs)))
-		{
+			this.enabled = false;
+		} else if (currentCount >= (respawnCount + (downMult * downs)) &&
+				(ghostChild.GetComponent<ghostAnimator> ().animEnum != ghostAnim.resurrect &&
+				ghostChild.GetComponent<ghostAnimator> ().animEnum != ghostAnim.disable)) {
 			if (ontopOf) {
+				ontopOf.anim.Play ("Idle", 0);
+				ontopOf.stat = status.stationary;
 				ontopOf.movementPause = false;
 				ontopOf.ontopOf = null;
 				XChild.gameObject.SetActive (false);
@@ -224,10 +240,12 @@ public class PlayerController : MonoBehaviour
 			if (other.GetComponent<PlayerController> ().arbitaryHealth <= 0) {
 				if (!movementPause) {
 					if (!other.GetComponent<PlayerController> ().ontopOf) {
-						ontopOf = other.GetComponent<PlayerController> ();
-						other.GetComponent<PlayerController> ().ontopOf = this;
-						XChild.gameObject.SetActive (true);
-						other.GetComponent<PlayerController> ().XChild.SetActive(true);
+						if (other.GetComponent<PlayerController> ().enabled) {
+							ontopOf = other.GetComponent<PlayerController> ();
+							other.GetComponent<PlayerController> ().ontopOf = this;
+							XChild.gameObject.SetActive (true);
+							other.GetComponent<PlayerController> ().XChild.SetActive (true);
+						}
 					}
 				}
 			}
@@ -241,10 +259,12 @@ public class PlayerController : MonoBehaviour
 				if (!movementPause) {
 					if (!other.GetComponent<PlayerController> ().ontopOf) {
 						if (!ontopOf) {
-							ontopOf = other.GetComponent<PlayerController> ();
-							other.GetComponent<PlayerController> ().ontopOf = this;
-							XChild.gameObject.SetActive (true);
-							other.GetComponent<PlayerController> ().XChild.SetActive (true);
+							if (other.GetComponent<PlayerController> ().enabled) {
+								ontopOf = other.GetComponent<PlayerController> ();
+								other.GetComponent<PlayerController> ().ontopOf = this;
+								XChild.gameObject.SetActive (true);
+								other.GetComponent<PlayerController> ().XChild.SetActive (true);
+							}
 						}
 					}
 				}
@@ -258,13 +278,18 @@ public class PlayerController : MonoBehaviour
 		if (other.GetComponent<PlayerController> ()) {
 			if (other.GetComponent<PlayerController> ().ontopOf) {
 				if (other.GetComponent<PlayerController> ().ontopOf == this) {
-					if (ontopOf) {
-						ontopOf.currentEnemyCount = 0;
-						ontopOf = null;
+					if (other.transform.tag != "Weapon") {
+						if (ontopOf) {
+							ontopOf.currentEnemyCount = 0;
+							ontopOf = null;
+						}
+						if (movementPause && stat != status.dodging) {
+							movementPause = false;
+						}
+						XChild.gameObject.SetActive (false);
+						other.GetComponent<PlayerController> ().XChild.gameObject.SetActive (false);
+						other.GetComponent<PlayerController> ().ontopOf = null;
 					}
-					XChild.gameObject.SetActive (false);
-					other.GetComponent<PlayerController> ().XChild.gameObject.SetActive (false);
-					other.GetComponent<PlayerController> ().ontopOf = null;
 				}
 			}
 		}
@@ -449,6 +474,10 @@ public class PlayerController : MonoBehaviour
             }
         }
 
+		if (arbitaryHealth <= 0 && !(stat == status.death || stat == status.deathAnim)) {
+			takeDamage (0);
+		}
+
         GetComponent<SpriteRenderer>().color = playerColor;
         m_attack.SetColor(playerColor);
         //Vector2 temp = GetComponent<SpriteRenderer>().bounds.size;
@@ -484,22 +513,8 @@ public class PlayerController : MonoBehaviour
 						stat = status.falling;
 					}
 				}
-			} else
-            {
-                if (stat == status.tickling)
-                {
-                    //stat 
-                }
-            }
+			}
 		}
-
-        //if (ontopOf && animNeedsFinish <= 0)
-        //{
-          //  if (stat == status.tickling)
-          //  {
-            //    stat = status.stationary;
-            //}
-        //}
 
         if (stat == status.slidingOnWall) {
 			//activate sliding anim
@@ -587,13 +602,13 @@ public class PlayerController : MonoBehaviour
 		keyPressDown = false;
 		canJumpVariable = false;
 
-		if (stat == status.dodging || stat == status.slidingOnWall || stat == status.wallJump || stat == status.dashing || stat == status.death  || stat == status.deathAnim)
+		if (stat == status.dodging || stat == status.slidingOnWall || stat == status.wallJump || stat == status.dashing || stat == status.death  || stat == status.deathAnim || stat == status.tickling)
         {
-            m_attack.SetAttackEnabled(false);
+			m_attack.SetAttackEnabled(false);
         }
         else
         {
-            m_attack.SetAttackEnabled(true);
+			m_attack.SetAttackEnabled(true);
         }
     }
 
@@ -630,13 +645,13 @@ public class PlayerController : MonoBehaviour
 		//loop through all hits and return first object that isn't self
 		foreach (RaycastHit2D hi in hit) {
 			if (hi.transform != transform) {
-				if (hi.transform.tag == "Player") {
-					if (!hi.transform.GetComponent<PlayerController> ().movementPause) {
-						return true;
-					}
-				} else {
+				if (hi.transform.tag != "Player" && hi.transform.tag != "Weapon" && hi.transform.tag != "PlayerMisc") {
+					//if (!hi.transform.GetComponent<PlayerController> ().movementPause) {
 					return true;
-				}
+					//}
+				} //else {
+				//	return true;
+				//}
 			}
 		}
 
@@ -656,13 +671,13 @@ public class PlayerController : MonoBehaviour
 		//loop through all hits and return first object that isn't self
 		foreach (RaycastHit2D hi in hit) {
 			if (hi.transform != transform) {
-				if (hi.transform.tag == "Player") {
-					if (!hi.transform.GetComponent<PlayerController> ().movementPause) {
-						return true;
-					}
-				} else {
+				if (hi.transform.tag != "Player" && hi.transform.tag != "Weapon" && hi.transform.tag != "PlayerMisc") {
+					//if (!hi.transform.GetComponent<PlayerController> ().movementPause) {
 					return true;
-				}
+					//}
+				} //else {
+				//	return true;
+				//}
 			}
 		}
 
@@ -682,13 +697,13 @@ public class PlayerController : MonoBehaviour
 		//loop through all hits and return first object that isn't self
 		foreach (RaycastHit2D hi in hit) {
 			if (hi.transform != transform) {
-				if (hi.transform.tag == "Player") {
-					if (!hi.transform.GetComponent<PlayerController> ().movementPause) {
-						return true;
-					}
-				} else {
+				if (hi.transform.tag != "Player" && hi.transform.tag != "Weapon" && hi.transform.tag != "PlayerMisc") {
+					//if (!hi.transform.GetComponent<PlayerController> ().movementPause) {
 					return true;
-				}
+					//}
+				} //else {
+				//	return true;
+				//}
 			}
 		}
 

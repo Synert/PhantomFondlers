@@ -17,11 +17,13 @@ public class Invincibility : MonoBehaviour
     private float cooldown = 0f;
     private float duration = 0f;
     float originalDistance;
+	bool intoWall = false;
 
     // Use this for initialization
     void Start ()
     {
         anim = GetComponent<Animator>();
+		playerController = GetComponent<PlayerController> ();
     }
 
     // Update is called once per frame
@@ -57,13 +59,14 @@ public class Invincibility : MonoBehaviour
     void dodge(variableData _var)
     {
         float stickVel = -_var.state.ThumbStickLeft.inputs.x;
-        if (GetComponent<PlayerController>().isOnGround)
+		if (playerController.isOnGround && !(playerController.stat == status.death || playerController.stat == status.deathAnim))
         {
             if (cooldown <= 0)
             {
                 if (GetComponent<Rigidbody2D>().velocity.x > -playerController.MaxSpeed && stickVel < 0)
                 {
-                    GetComponent<PlayerController>().playSound(4, 1, 6);
+					intoWall = false;
+					playerController.playSound(4, 1, 6);
                     //anim.SetInteger("State", 4);
                     GetComponent<Rigidbody2D>().AddForce(new Vector2(-playerController.Acceleration, 0.0f));
                     Debug.Log("Moving Right");
@@ -78,8 +81,9 @@ public class Invincibility : MonoBehaviour
 
                 }
                 else if (GetComponent<Rigidbody2D>().velocity.x < playerController.MaxSpeed && stickVel > 0)
-                {
-                    GetComponent<PlayerController>().playSound(4, 1, 1);
+				{
+					intoWall = false;
+					playerController.playSound(4, 1, 1);
                     //anim.SetInteger("State", 4);
                     GetComponent<Rigidbody2D>().AddForce(new Vector2(playerController.Acceleration, 0.0f));
                     Debug.Log("Moving Left");
@@ -100,9 +104,24 @@ public class Invincibility : MonoBehaviour
 
     void movement(float direction)
     {
+		if (direction == 1) {
+			if (playerController.rightWall) {
+				intoWall = true;
+
+			}
+		} else if (direction == -1) {
+			if (playerController.leftWall) {
+				intoWall = true;
+			}
+		}
+		if (playerController.stat == status.death || playerController.stat == status.deathAnim) {
+			isDogding = false;
+			isInvincible = false;
+			playerController.movementPause = false;
+		}
         duration -= Time.deltaTime;
         float currentDistance = Vector2.Distance(transform.position, destitation);
-        if (duration <= 1f)
+		if (duration <= 1f && !intoWall)
         { 
             transform.position = Vector2.Lerp(transform.position, destitation, Time.deltaTime + ((currentDistance / originalDistance) * Time.deltaTime));
         }

@@ -29,8 +29,10 @@ public class PillowCannon : WeaponPickup
 
         if(GetOwner() != null)
         {
-            pickupSprite.enabled = false;
-            armSprite.enabled = true;
+			if (GetOwner ().GetComponent<PlayerAttacks> ().canAttack) {
+				pickupSprite.enabled = false;
+				armSprite.enabled = true;
+			}
         }
         else
         {

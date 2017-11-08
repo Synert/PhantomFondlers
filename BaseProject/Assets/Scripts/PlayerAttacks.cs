@@ -12,7 +12,7 @@ public class PlayerAttacks : MonoBehaviour
     bool quadSet = false;
     bool resetAttack = false;
     float size = 45f;
-    bool canAttack = true;
+    public bool canAttack = true;
 
     float power = 0.0f;
     Vector2 inputs;
@@ -73,11 +73,11 @@ public class PlayerAttacks : MonoBehaviour
 
         else
         {
-            if(m_weapon != null)
-            {
-                m_weapon.gameObject.SetActive(false);
-            }
-            m_duster.gameObject.SetActive(false);
+            //if(m_weapon != null)
+            //{
+            //    m_weapon.gameObject.SetActive(false);
+            //}
+            //m_duster.gameObject.SetActive(false);
             attacking = false;
             power = 0.0f;
             quadSet = false;
@@ -262,7 +262,17 @@ public class PlayerAttacks : MonoBehaviour
     public void SetAttackEnabled(bool set)
     {
         canAttack = set;
+		if (m_weapon) {
+			toggleWeaponRender (m_weapon, set);
+		}
+		if (m_duster) {
+			toggleWeaponRender (m_duster, set);
+		}
     }
+
+	void toggleWeaponRender(Transform objParent, bool set) {
+		objParent.GetComponent<WeaponPickup> ().sprite.GetComponent<SpriteRenderer> ().enabled = set;
+	}
 
     public bool CanAttack()
     {

@@ -11,7 +11,8 @@ public class WeaponPickup : MonoBehaviour
     float cooldown = 0.0f;
     public Transform projectile;
     public int damage;
-    GameObject owner;
+	GameObject owner;
+	public GameObject sprite;
     bool held = false;
     public float powerCap;
     bool doneDamage = true;
